@@ -9,6 +9,7 @@ import Splash from "@/pages/splash";
 import Login from "@/pages/login";
 import Lobby from "@/pages/lobby";
 import Matchmaking from "@/pages/matchmaking";
+import Battle from "@/pages/battle";
 import Live from "@/pages/live";
 import Profile from "@/pages/profile";
 
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/lobby"><ProtectedRoute component={Lobby} /></Route>
       <Route path="/matchmaking"><ProtectedRoute component={Matchmaking} /></Route>
+      <Route path="/battle"><ProtectedRoute component={Battle} /></Route>
       <Route path="/live"><ProtectedRoute component={Live} /></Route>
       <Route path="/profile"><ProtectedRoute component={Profile} /></Route>
       <Route component={NotFound} />

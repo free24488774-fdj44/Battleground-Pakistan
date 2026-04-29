@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Users, Shield } from "lucide-react";
@@ -18,29 +18,48 @@ export default function Matchmaking() {
   const [mode, setMode] = useState<Mode | null>(null);
   const [players, setPlayers] = useState<number>(1);
   const [ready, setReady] = useState(false);
+  const dropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!mode) return;
-    let interval: ReturnType<typeof setInterval> | undefined;
+    setPlayers(1);
+    setReady(false);
 
-    if (players < 50) {
-      interval = setInterval(() => {
-        setPlayers(prev => {
-          const next = prev + Math.floor(Math.random() * 5) + 1;
-          if (next >= 50) {
-            if (interval) clearInterval(interval);
-            setTimeout(() => setReady(true), 500);
-            return 50;
-          }
-          return next;
-        });
-      }, 300);
-    }
+    // Quickly fill from 1 → 50 in ~1.6 seconds
+    const fillInterval = setInterval(() => {
+      setPlayers(prev => {
+        const next = prev + Math.floor(Math.random() * 8) + 4;
+        if (next >= 50) {
+          clearInterval(fillInterval);
+          setTimeout(() => setReady(true), 200);
+          return 50;
+        }
+        return next;
+      });
+    }, 120);
 
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(fillInterval);
     };
-  }, [players, mode]);
+  }, [mode]);
+
+  // Auto-drop into battleground 1.2s after match is ready
+  useEffect(() => {
+    if (!ready || !mode) return;
+    dropTimerRef.current = setTimeout(() => {
+      sessionStorage.setItem("ranjha_battle_mode", mode);
+      setLocation("/battle");
+    }, 1200);
+    return () => {
+      if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+    };
+  }, [ready, mode, setLocation]);
+
+  const dropIn = () => {
+    if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+    sessionStorage.setItem("ranjha_battle_mode", mode || "solo");
+    setLocation("/battle");
+  };
 
   return (
     <div className="relative w-full min-h-screen bg-black overflow-hidden flex flex-col items-center justify-center font-sans text-white">
@@ -132,7 +151,7 @@ export default function Matchmaking() {
                       cx="96" cy="96" r="90" fill="none" stroke="hsl(var(--primary))" strokeWidth="4"
                       strokeDasharray="565.48"
                       strokeDashoffset={565.48 - (565.48 * (players / 50))}
-                      className="transition-all duration-300 ease-out"
+                      className="transition-all duration-200 ease-out"
                     />
                   </svg>
                   <div className="absolute flex flex-col items-center">
@@ -160,26 +179,18 @@ export default function Matchmaking() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="font-display text-2xl text-primary font-bold uppercase tracking-[0.2em]"
                       >
-                        Match Ready
+                        Dropping In...
                       </motion.span>
                     )}
                   </AnimatePresence>
                 </div>
 
-                <AnimatePresence>
-                  {ready && (
-                    <motion.button
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setLocation("/lobby")}
-                      className="w-full py-4 bg-primary text-primary-foreground font-display font-bold text-xl uppercase tracking-widest rounded-xl mt-4 shadow-[0_0_20px_rgba(244,180,26,0.4)]"
-                    >
-                      Drop In
-                    </motion.button>
-                  )}
-                </AnimatePresence>
+                <button
+                  onClick={dropIn}
+                  className="w-full py-4 bg-primary text-primary-foreground font-display font-bold text-xl uppercase tracking-widest rounded-xl mt-2 shadow-[0_0_20px_rgba(244,180,26,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                >
+                  Drop In Now
+                </button>
 
                 <button
                   onClick={() => { setMode(null); setPlayers(1); setReady(false); }}
