@@ -1,8 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
-
-@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 

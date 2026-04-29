@@ -6,7 +6,7 @@ import { useGame } from "@/contexts/GameContext";
 import { Particles } from "@/components/game/Particles";
 import { NeonButton } from "@/components/game/NeonButton";
 import { CharacterCard, PetCard, GunCard, MapCard } from "@/components/game/Cards";
-import { CHARACTERS, PETS, GUNS, MAPS, OUTFITS, SKILLS } from "@/lib/mock-data";
+import { CHARACTERS, PETS, GUNS, MAPS, OUTFITS, SKILLS, MOCK_FRIENDS } from "@/lib/mock-data";
 import { toast } from "@/hooks/use-toast";
 
 type Tab = "Characters" | "Outfits" | "Pets" | "Guns" | "Skills" | "Maps" | "Friends";
@@ -196,13 +196,33 @@ export default function Lobby() {
 
                 {activeTab === "Friends" && (
                   <div className="col-span-2 lg:col-span-3 flex flex-col gap-4">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-display uppercase tracking-wider">
+                      <Shield className="w-4 h-4" />
+                      Secure connection — friend data stays on this device
+                    </div>
                     <div className="flex gap-2">
                       <input 
                         type="text" 
                         placeholder="Search UID or Name..." 
+                        maxLength={32}
                         className="flex-1 bg-black/50 border border-white/20 focus:border-primary rounded-lg p-2 text-sm text-white outline-none"
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/[<>'"`;\\]/g, "");
+                          if (cleaned !== e.target.value) e.target.value = cleaned;
+                        }}
                       />
-                      <button className="px-4 py-2 bg-primary text-black font-display font-bold rounded-lg text-sm uppercase">Search</button>
+                      <button
+                        className="px-4 py-2 bg-primary text-black font-display font-bold rounded-lg text-sm uppercase"
+                        onClick={() => toast({ title: "Search", description: "No matching players found." })}
+                      >
+                        Search
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-accent/20 border border-accent/50 text-accent font-display font-bold rounded-lg text-sm uppercase hover:bg-accent/30 transition-colors"
+                        onClick={copyUid}
+                      >
+                        Share My ID
+                      </button>
                     </div>
                     <div className="space-y-2">
                       {MOCK_FRIENDS.map(f => (
@@ -214,11 +234,16 @@ export default function Lobby() {
                             </div>
                             <div>
                               <div className="font-display font-bold text-white text-sm uppercase">{f.name}</div>
-                              <div className="text-[10px] text-white/50">LVL {f.level}</div>
+                              <div className="text-[10px] text-white/50">LVL {f.level} · UID {f.uid}</div>
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <button className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded text-xs font-display uppercase tracking-wider transition-colors">Invite</button>
+                            <button
+                              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded text-xs font-display uppercase tracking-wider transition-colors"
+                              onClick={() => toast({ title: "Invite Sent", description: `Squad invite sent to ${f.name}.` })}
+                            >
+                              Invite
+                            </button>
                           </div>
                         </div>
                       ))}
