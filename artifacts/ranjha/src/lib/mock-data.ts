@@ -4,10 +4,21 @@ import heroRanjha from "@/assets/images/hero-ranjha.png";
 import heroHeer from "@/assets/images/hero-heer.png";
 import petMonkey from "@/assets/images/pet-monkey.png";
 import gunAr from "@/assets/images/gun-ar.png";
-import mapLahore from "@/assets/images/map-lahore.png";
-import mapHunza from "@/assets/images/map-hunza.png";
 import outfitMughal from "@/assets/images/outfit-mughal.png";
 import avatar1 from "@/assets/images/avatar-1.png";
+
+import mapLahoreFort from "@/assets/images/maps/map-lahore.jpg";
+import mapHunza from "@/assets/images/maps/map-hunza.avif";
+import mapKarachi from "@/assets/images/maps/map-karachi.png";
+import mapMargalla from "@/assets/images/maps/map-margalla.webp";
+import mapFaisalabad from "@/assets/images/maps/map-faisalabad.jpg";
+import mapMultan from "@/assets/images/maps/map-multan.jpg";
+import mapQuetta from "@/assets/images/maps/map-quetta.webp";
+import mapPeshawar from "@/assets/images/maps/map-peshawar.jpg";
+import mapMurree from "@/assets/images/maps/map-murree.avif";
+import mapSkardu from "@/assets/images/maps/map-skardu.jpg";
+import mapNaran from "@/assets/images/maps/map-naran.webp";
+import mapFortress from "@/assets/images/maps/map-fortress.jpg";
 
 // 45 Characters
 const names = [
@@ -116,18 +127,18 @@ export const SKILLS: Skill[] = [
 ];
 
 export const MAPS: GameMap[] = [
-  { id: "map_1", name: "Lahore Fort", image: mapLahore, players: 50, climate: "Urban / Historical", isMain: true },
-  { id: "map_2", name: "Hunza Valley", image: mapHunza, players: 50, climate: "Mountain / Snow" },
-  { id: "map_3", name: "Karachi Seaview", image: mapLahore, players: 50, climate: "Coastal / Urban" },
-  { id: "map_4", name: "Margalla Hills, Islamabad", image: mapHunza, players: 50, climate: "Forest / Hills" },
-  { id: "map_5", name: "Faisalabad Clock Tower", image: mapLahore, players: 50, climate: "Urban / Dense" },
-  { id: "map_6", name: "Multan Bazaar", image: mapLahore, players: 50, climate: "Urban / Desert" },
-  { id: "map_7", name: "Quetta Mountains", image: mapHunza, players: 50, climate: "Mountain / Arid" },
-  { id: "map_8", name: "Peshawar Old City", image: mapLahore, players: 50, climate: "Urban / Historical" },
-  { id: "map_9", name: "Murree Hills", image: mapHunza, players: 50, climate: "Forest / Snow" },
-  { id: "map_10", name: "Skardu Lake", image: mapHunza, players: 50, climate: "Lakeside / Mountain" },
-  { id: "map_11", name: "Naran Kaghan", image: mapHunza, players: 50, climate: "Valley / River" },
-  { id: "map_12", name: "Fortress Square Mall, Lahore", image: mapLahore, players: 50, climate: "Indoor / Urban" },
+  { id: "map_1",  name: "Lahore Fort",                  image: mapLahoreFort, players: 50, climate: "Urban / Historical",   isMain: true },
+  { id: "map_2",  name: "Hunza Valley",                 image: mapHunza,      players: 50, climate: "Mountain / Snow" },
+  { id: "map_3",  name: "Karachi Seaview",              image: mapKarachi,    players: 50, climate: "Coastal / Urban" },
+  { id: "map_4",  name: "Margalla Hills, Islamabad",    image: mapMargalla,   players: 50, climate: "Forest / Hills" },
+  { id: "map_5",  name: "Faisalabad Clock Tower",       image: mapFaisalabad, players: 50, climate: "Urban / Dense" },
+  { id: "map_6",  name: "Multan Bazaar",                image: mapMultan,     players: 50, climate: "Urban / Desert" },
+  { id: "map_7",  name: "Quetta Mountains",             image: mapQuetta,     players: 50, climate: "Mountain / Arid" },
+  { id: "map_8",  name: "Peshawar Old City",            image: mapPeshawar,   players: 50, climate: "Urban / Historical" },
+  { id: "map_9",  name: "Murree Hills",                 image: mapMurree,     players: 50, climate: "Forest / Snow" },
+  { id: "map_10", name: "Skardu Lake",                  image: mapSkardu,     players: 50, climate: "Lakeside / Mountain" },
+  { id: "map_11", name: "Naran Kaghan",                 image: mapNaran,      players: 50, climate: "Valley / River" },
+  { id: "map_12", name: "Fortress Stadium, Lahore",     image: mapFortress,   players: 50, climate: "Stadium / Urban" },
 ];
 
 export const MOCK_FRIENDS: Friend[] = [
