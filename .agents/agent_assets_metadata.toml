@@ -1,0 +1,62 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "n2EbCFbxOmG5oP29HJqcn"
+uri = "file://artifacts/ranjha/src/assets/images/bg-splash.png"
+type = "image"
+title = "Pakistan warzone landscape"
+
+[[generated]]
+id = "O2S7ML0suOGmJkHsDAia5"
+uri = "file://artifacts/ranjha/src/assets/images/bg-login.png"
+type = "image"
+title = "Karachi neon warzone"
+
+[[generated]]
+id = "CkcXe3lYEydwcd4pJ1ewc"
+uri = "file://artifacts/ranjha/src/assets/images/hero-ranjha.png"
+type = "image"
+title = "Ranjha male warrior"
+
+[[generated]]
+id = "1_3YDwVhpQYvgYYDdbDCx"
+uri = "file://artifacts/ranjha/src/assets/images/hero-heer.png"
+type = "image"
+title = "Heer female warrior"
+
+[[generated]]
+id = "CCJuDt4NjMeC5Um2YENML"
+uri = "file://artifacts/ranjha/src/assets/images/pet-monkey.png"
+type = "image"
+title = "Tactical Monkey Pet"
+
+[[generated]]
+id = "3obLXtR1rbnG28ia5D3sC"
+uri = "file://artifacts/ranjha/src/assets/images/gun-ar.png"
+type = "image"
+title = "Assault Rifle weapon"
+
+[[generated]]
+id = "BcKXozO5HdwQb2Qu0uHdS"
+uri = "file://artifacts/ranjha/src/assets/images/map-lahore.png"
+type = "image"
+title = "Lahore Fort map"
+
+[[generated]]
+id = "GpdOtoszLYTIeTXslczUR"
+uri = "file://artifacts/ranjha/src/assets/images/map-hunza.png"
+type = "image"
+title = "Hunza Valley map"
+
+[[generated]]
+id = "_5yLJmSIR_A98IB0sb4EP"
+uri = "file://artifacts/ranjha/src/assets/images/outfit-mughal.png"
+type = "image"
+title = "Mughal Warlord Outfit"
+
+[[generated]]
+id = "gyE__1mY3E_5YCrgpwUPE"
+uri = "file://artifacts/ranjha/src/assets/images/avatar-1.png"
+type = "image"
+title = "Player Avatar"

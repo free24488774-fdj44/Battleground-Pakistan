@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Ranjha - Battle Royale"
+version = "1.0.0"
+id = "artifacts/ranjha"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21544
+
+[services.development]
+run = "pnpm --filter @workspace/ranjha run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ranjha", "run", "build" ]
+publicDir = "artifacts/ranjha/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21544"
+BASE_PATH = "/"
