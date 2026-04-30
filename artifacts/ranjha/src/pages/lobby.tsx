@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Copy, Settings, Store, Calendar, Radio, Users, Crosshair, Map, Shield, Sparkles } from "lucide-react";
+import { Play, Copy, Settings, Store, Calendar, Radio, Shield, ShoppingCart, Coins, Gem } from "lucide-react";
 import { useGame } from "@/contexts/GameContext";
 import { Particles } from "@/components/game/Particles";
 import { NeonButton } from "@/components/game/NeonButton";
@@ -13,15 +13,20 @@ type Tab = "Characters" | "Outfits" | "Pets" | "Guns" | "Skills" | "Maps" | "Fri
 
 export default function Lobby() {
   const [, setLocation] = useLocation();
-  const { 
-    profile, 
-    selectedCharacter, 
-    selectedPet, 
+  const {
+    profile,
+    selectedCharacter,
+    selectedPet,
+    selectedPrimaryGun,
     selectedMap,
+    selectedSkills,
     equipCharacter,
     equipPet,
     equipPrimaryGun,
-    selectMap
+    selectMap,
+    toggleSkill,
+    ownsCharacter, ownsPet, ownsGun, ownsSkill,
+    purchaseCharacter, purchasePet, purchaseGun, purchaseSkill,
   } = useGame();
   
   const [activeTab, setActiveTab] = useState<Tab>("Characters");
@@ -35,6 +40,30 @@ export default function Lobby() {
     navigator.clipboard.writeText(profile.uid);
     toast({ title: "UID Copied", description: "Copied to clipboard." });
   };
+
+  const handlePurchase = (label: string, result: ReturnType<typeof purchaseCharacter>) => {
+    if (result.ok) {
+      toast({ title: `${label} purchased!`, description: result.message });
+    } else {
+      toast({ title: "Cannot purchase", description: result.message, variant: "destructive" });
+    }
+  };
+
+  const tryEquipCharacter = (c: typeof selectedCharacter) => {
+    if (!ownsCharacter(c.id)) return;
+    equipCharacter(c);
+  };
+  const tryEquipPet = (p: NonNullable<typeof selectedPet>) => {
+    if (!ownsPet(p.id)) return;
+    equipPet(p);
+  };
+  const tryEquipGun = (g: NonNullable<typeof selectedPrimaryGun>) => {
+    if (!ownsGun(g.id)) return;
+    equipPrimaryGun(g);
+  };
+
+  const xpThreshold = 500 * Math.max(1, profile.level);
+  const xpPct = Math.min(100, Math.round((profile.xp / xpThreshold) * 100));
 
   return (
     <div className="relative w-full min-h-screen bg-background overflow-hidden flex flex-col font-sans">
@@ -61,20 +90,25 @@ export default function Lobby() {
               <span>UID: {profile.uid}</span>
               <Copy className="w-3 h-3 cursor-pointer hover:text-white" onClick={(e) => { e.stopPropagation(); copyUid(); }} />
             </div>
-            <div className="w-32 h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
-              <div className="h-full bg-accent w-[45%]" />
+            <div className="w-32 h-1 bg-white/10 rounded-full mt-1 overflow-hidden" title={`XP ${profile.xp} / ${xpThreshold}`}>
+              <div className="h-full bg-accent transition-all" style={{ width: `${xpPct}%` }} />
             </div>
+            <div className="text-[9px] text-white/40 font-display uppercase tracking-widest mt-0.5">XP {profile.xp.toLocaleString()} / {xpThreshold.toLocaleString()}</div>
           </div>
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-yellow-500/20 border border-yellow-500 flex items-center justify-center text-yellow-500 font-bold text-xs">C</div>
-            <span className="font-display font-bold text-lg">{profile.coins.toLocaleString()}</span>
+          <div className="flex items-center gap-2" data-testid="balance-coins">
+            <div className="w-7 h-7 rounded-full bg-yellow-500/20 border border-yellow-500 flex items-center justify-center text-yellow-400">
+              <Coins className="w-3.5 h-3.5" />
+            </div>
+            <span className="font-display font-bold text-lg text-yellow-100">{profile.coins.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-cyan-500/20 border border-cyan-500 flex items-center justify-center text-cyan-500 font-bold text-xs">D</div>
-            <span className="font-display font-bold text-lg">{profile.diamonds.toLocaleString()}</span>
+          <div className="flex items-center gap-2" data-testid="balance-diamonds">
+            <div className="w-7 h-7 rounded-full bg-cyan-500/20 border border-cyan-500 flex items-center justify-center text-cyan-300">
+              <Gem className="w-3.5 h-3.5" />
+            </div>
+            <span className="font-display font-bold text-lg text-cyan-100">{profile.diamonds.toLocaleString()}</span>
           </div>
         </div>
       </header>
@@ -144,12 +178,14 @@ export default function Lobby() {
                 className="grid grid-cols-2 lg:grid-cols-3 gap-3"
               >
                 {activeTab === "Characters" && CHARACTERS.map(c => (
-                  <CharacterCard 
-                    key={c.id} 
-                    character={c} 
-                    isLocked={profile.level < c.unlockLevel}
+                  <CharacterCard
+                    key={c.id}
+                    character={c}
+                    isLocked={profile.level < c.unlockLevel && !ownsCharacter(c.id)}
                     isSelected={selectedCharacter.id === c.id}
-                    onClick={() => equipCharacter(c)}
+                    isOwned={ownsCharacter(c.id)}
+                    onClick={() => tryEquipCharacter(c)}
+                    onBuy={() => handlePurchase(c.name, purchaseCharacter(c))}
                   />
                 ))}
 
@@ -157,15 +193,23 @@ export default function Lobby() {
                   <PetCard
                     key={p.id}
                     pet={p}
-                    isLocked={profile.level < p.unlockLevel}
+                    isLocked={profile.level < p.unlockLevel && !ownsPet(p.id)}
                     isSelected={selectedPet?.id === p.id}
-                    onClick={() => equipPet(p)}
+                    isOwned={ownsPet(p.id)}
+                    onClick={() => tryEquipPet(p)}
+                    onBuy={() => handlePurchase(p.name, purchasePet(p))}
                   />
                 ))}
 
                 {activeTab === "Guns" && GUNS.slice(0, 12).map(g => (
                   <div key={g.id} className="col-span-2 lg:col-span-3">
-                    <GunCard gun={g} onClick={() => equipPrimaryGun(g)} />
+                    <GunCard
+                      gun={g}
+                      isSelected={selectedPrimaryGun?.id === g.id}
+                      isOwned={ownsGun(g.id)}
+                      onClick={() => tryEquipGun(g)}
+                      onBuy={() => handlePurchase(g.name, purchaseGun(g))}
+                    />
                   </div>
                 ))}
 
@@ -180,15 +224,50 @@ export default function Lobby() {
                   </div>
                 ))}
 
-                {activeTab === "Skills" && SKILLS.map(s => (
-                  <div key={s.id} className="col-span-2 lg:col-span-3 glass-panel p-3 rounded-lg border border-white/10">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-display font-bold text-white uppercase">{s.name}</h3>
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${s.type === 'Active' ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>{s.type}</span>
+                {activeTab === "Skills" && SKILLS.map(s => {
+                  const owned = ownsSkill(s.id);
+                  const equipped = !!selectedSkills.find(sk => sk.id === s.id);
+                  return (
+                    <div
+                      key={s.id}
+                      className={`col-span-2 lg:col-span-3 glass-panel p-3 rounded-lg border ${equipped ? "border-primary/60 shadow-[0_0_15px_rgba(244,180,26,0.2)]" : "border-white/10"}`}
+                    >
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-display font-bold text-white uppercase truncate">{s.name}</h3>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${s.type === 'Active' ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>{s.type}</span>
+                            {owned ? (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 font-display font-bold uppercase tracking-widest">Owned</span>
+                            ) : (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/15 border border-yellow-500/40 text-yellow-300 font-display font-bold flex items-center gap-1">
+                                <Coins className="w-2.5 h-2.5" />{s.priceCoins.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {owned ? (
+                          <button
+                            onClick={() => toggleSkill(s)}
+                            className={`text-[10px] px-3 py-1.5 rounded font-display font-bold uppercase tracking-widest shrink-0 ${equipped ? "bg-white/15 text-white hover:bg-white/25" : "bg-primary text-primary-foreground hover:scale-105"}`}
+                            data-testid={`button-skill-${s.id}`}
+                          >
+                            {equipped ? "Unequip" : "Equip"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handlePurchase(s.name, purchaseSkill(s))}
+                            className="text-[10px] px-3 py-1.5 rounded bg-primary text-primary-foreground font-display font-bold uppercase tracking-widest shrink-0 flex items-center gap-1 hover:scale-105"
+                            data-testid={`button-buy-skill-${s.id}`}
+                          >
+                            <ShoppingCart className="w-3 h-3" /> Buy
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-white/60 leading-relaxed">{s.description}</p>
                     </div>
-                    <p className="text-xs text-white/60 leading-relaxed">{s.description}</p>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {activeTab === "Outfits" && OUTFITS.map(o => (
                   <div key={o.id} className="relative aspect-[3/4] rounded-lg overflow-hidden glass-panel cursor-pointer hover:border-primary border border-white/10">

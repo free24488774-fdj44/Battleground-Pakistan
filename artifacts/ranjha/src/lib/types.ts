@@ -10,6 +10,7 @@ export interface Character {
   hp: number;
   speed: number;
   skillPower: number;
+  priceCoins: number;
 }
 
 export interface Pet {
@@ -19,6 +20,8 @@ export interface Pet {
   unlockLevel: number;
   ability: string;
   image: string;
+  priceCoins: number;
+  priceDiamonds: number;
 }
 
 export interface Gun {
@@ -29,6 +32,7 @@ export interface Gun {
   range: number;
   rateOfFire: number;
   image: string;
+  priceCoins: number;
 }
 
 export interface Outfit {
@@ -43,6 +47,7 @@ export interface Skill {
   type: 'Active' | 'Passive';
   cooldown: number;
   description: string;
+  priceCoins: number;
 }
 
 export interface MapPOI {

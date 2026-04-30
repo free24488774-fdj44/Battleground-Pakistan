@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { 
-  CHARACTERS, 
-  PETS, 
-  GUNS, 
-  OUTFITS, 
-  SKILLS, 
-  MAPS, 
-  MOCK_FRIENDS 
+import {
+  CHARACTERS,
+  PETS,
+  GUNS,
+  OUTFITS,
+  SKILLS,
+  MAPS,
+  MOCK_FRIENDS
 } from "@/lib/mock-data";
 import { Character, Pet, Gun, Outfit, Skill, GameMap, Friend } from "@/lib/types";
 
@@ -18,7 +18,30 @@ interface PlayerProfile {
   coins: number;
   diamonds: number;
   avatar: string;
+  ownedCharacters: string[];
+  ownedPets: string[];
+  ownedGuns: string[];
+  ownedSkills: string[];
 }
+
+interface BattleStats {
+  kills: number;
+  survived: boolean;
+  won: boolean;
+  topTen: boolean;
+}
+
+interface BattleReward {
+  coinsEarned: number;
+  xpEarned: number;
+  diamondsEarned: number;
+  levelsGained: number;
+  newLevel: number;
+}
+
+export type PurchaseResult =
+  | { ok: true; message: string }
+  | { ok: false; reason: "level" | "owned" | "coins" | "diamonds"; message: string };
 
 interface GameState {
   profile: PlayerProfile | null;
@@ -45,24 +68,66 @@ interface GameContextType extends GameState {
   selectMap: (map: GameMap) => void;
   addFriend: (friend: Friend) => void;
   removeFriend: (uid: string) => void;
+  // economy
+  purchaseCharacter: (c: Character) => PurchaseResult;
+  purchasePet: (p: Pet) => PurchaseResult;
+  purchaseGun: (g: Gun) => PurchaseResult;
+  purchaseSkill: (s: Skill) => PurchaseResult;
+  ownsCharacter: (id: string) => boolean;
+  ownsPet: (id: string) => boolean;
+  ownsGun: (id: string) => boolean;
+  ownsSkill: (id: string) => boolean;
+  awardBattleResults: (stats: BattleStats) => BattleReward;
+  xpForLevel: (level: number) => number;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
-const defaultProfile: PlayerProfile = {
-  uid: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
-  name: `RanjhaWarrior${Math.floor(1000 + Math.random() * 9000)}`,
-  level: 7,
-  xp: 450,
-  coins: 15420,
-  diamonds: 350,
-  avatar: "/assets/images/avatar-1.png"
-};
+const STARTER_CHARACTER = "char_1";    // Ranjha
+const STARTER_PET = "pet_1";           // Squirrel
+const STARTER_GUNS = ["gun_1", "gun_8"]; // AK-47, Glock-18
+const STARTER_SKILLS = ["skill_1", "skill_2"]; // Mughal Fury, Sindhi Shield
+
+const DIAMONDS_PER_LEVEL = 50;
+
+function makeStarterProfile(): PlayerProfile {
+  return {
+    uid: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
+    name: `RanjhaWarrior${Math.floor(1000 + Math.random() * 9000)}`,
+    level: 1,
+    xp: 0,
+    coins: 10000,
+    diamonds: 0,
+    avatar: "/assets/images/avatar-1.png",
+    ownedCharacters: [STARTER_CHARACTER],
+    ownedPets: [STARTER_PET],
+    ownedGuns: [...STARTER_GUNS],
+    ownedSkills: [...STARTER_SKILLS],
+  };
+}
+
+// Migrate legacy profiles missing ownership fields
+function migrate(p: PlayerProfile | null): PlayerProfile | null {
+  if (!p) return p;
+  return {
+    ...p,
+    ownedCharacters: p.ownedCharacters ?? [STARTER_CHARACTER],
+    ownedPets: p.ownedPets ?? [STARTER_PET],
+    ownedGuns: p.ownedGuns ?? [...STARTER_GUNS],
+    ownedSkills: p.ownedSkills ?? [...STARTER_SKILLS],
+    coins: typeof p.coins === "number" ? p.coins : 10000,
+    diamonds: typeof p.diamonds === "number" ? p.diamonds : 0,
+    level: p.level ?? 1,
+    xp: p.xp ?? 0,
+  };
+}
+
+const xpForLevel = (level: number) => 500 * Math.max(1, level);
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<PlayerProfile | null>(() => {
     const saved = localStorage.getItem("ranjha_profile");
-    return saved ? JSON.parse(saved) : null;
+    return saved ? migrate(JSON.parse(saved)) : null;
   });
 
   const [selectedCharacter, setSelectedCharacter] = useState<Character>(() => {
@@ -72,7 +137,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const [selectedPet, setSelectedPet] = useState<Pet | null>(() => {
     const saved = localStorage.getItem("ranjha_pet");
-    return saved ? JSON.parse(saved) : PETS[2]; // Monkey unlocked at lvl 5, player is lvl 7
+    return saved ? JSON.parse(saved) : PETS[0]; // Squirrel — starter
   });
 
   const [selectedPrimaryGun, setSelectedPrimaryGun] = useState<Gun | null>(() => {
@@ -82,7 +147,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const [selectedSecondaryGun, setSelectedSecondaryGun] = useState<Gun | null>(() => {
     const saved = localStorage.getItem("ranjha_secondary_gun");
-    return saved ? JSON.parse(saved) : GUNS.find(g => g.category === 'Pistols') || null;
+    return saved ? JSON.parse(saved) : GUNS.find(g => g.id === "gun_8") || null; // Glock
   });
 
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(() => {
@@ -120,10 +185,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => localStorage.setItem("ranjha_map", JSON.stringify(selectedMap)), [selectedMap]);
   useEffect(() => localStorage.setItem("ranjha_friends", JSON.stringify(friends)), [friends]);
 
-  const login = (type: 'google' | 'facebook' | 'guest') => {
-    if (!profile) {
-      setProfile(defaultProfile);
-    }
+  const login = (_type: 'google' | 'facebook' | 'guest') => {
+    if (!profile) setProfile(makeStarterProfile());
   };
 
   const logout = () => {
@@ -140,7 +203,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const equipSecondaryGun = (gun: Gun) => setSelectedSecondaryGun(gun);
   const equipOutfit = (outfit: Outfit) => setSelectedOutfit(outfit);
   const selectMap = (map: GameMap) => setSelectedMap(map);
-  
+
   const toggleSkill = (skill: Skill) => {
     setSelectedSkills(prev => {
       const exists = prev.find(s => s.id === skill.id);
@@ -151,14 +214,94 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const addFriend = (friend: Friend) => {
-    setFriends(prev => {
-      if (prev.find(f => f.uid === friend.uid)) return prev;
-      return [...prev, friend];
-    });
+    setFriends(prev => prev.find(f => f.uid === friend.uid) ? prev : [...prev, friend]);
+  };
+  const removeFriend = (uid: string) => setFriends(prev => prev.filter(f => f.uid !== uid));
+
+  // ── Ownership ──
+  const ownsCharacter = (id: string) => !!profile?.ownedCharacters.includes(id);
+  const ownsPet       = (id: string) => !!profile?.ownedPets.includes(id);
+  const ownsGun       = (id: string) => !!profile?.ownedGuns.includes(id);
+  const ownsSkill     = (id: string) => !!profile?.ownedSkills.includes(id);
+
+  // ── Purchases ──
+  const purchaseCharacter = (c: Character): PurchaseResult => {
+    if (!profile) return { ok: false, reason: "owned", message: "No active profile" };
+    if (ownsCharacter(c.id)) return { ok: false, reason: "owned", message: `${c.name} already owned` };
+    if (profile.level < c.unlockLevel) return { ok: false, reason: "level", message: `Reach level ${c.unlockLevel} first` };
+    if (profile.coins < c.priceCoins) return { ok: false, reason: "coins", message: `Need ${(c.priceCoins - profile.coins).toLocaleString()} more coins` };
+    setProfile(p => p ? { ...p, coins: p.coins - c.priceCoins, ownedCharacters: [...p.ownedCharacters, c.id] } : p);
+    return { ok: true, message: `${c.name} unlocked!` };
   };
 
-  const removeFriend = (uid: string) => {
-    setFriends(prev => prev.filter(f => f.uid !== uid));
+  const purchasePet = (p: Pet): PurchaseResult => {
+    if (!profile) return { ok: false, reason: "owned", message: "No active profile" };
+    if (ownsPet(p.id)) return { ok: false, reason: "owned", message: `${p.name} already owned` };
+    if (profile.level < p.unlockLevel) return { ok: false, reason: "level", message: `Reach level ${p.unlockLevel} first` };
+    if (profile.diamonds < p.priceDiamonds) return { ok: false, reason: "diamonds", message: `Need ${(p.priceDiamonds - profile.diamonds).toLocaleString()} more diamonds` };
+    if (profile.coins < p.priceCoins) return { ok: false, reason: "coins", message: `Need ${(p.priceCoins - profile.coins).toLocaleString()} more coins` };
+    setProfile(prev => prev ? {
+      ...prev,
+      coins: prev.coins - p.priceCoins,
+      diamonds: prev.diamonds - p.priceDiamonds,
+      ownedPets: [...prev.ownedPets, p.id],
+    } : prev);
+    return { ok: true, message: `${p.name} tamed!` };
+  };
+
+  const purchaseGun = (g: Gun): PurchaseResult => {
+    if (!profile) return { ok: false, reason: "owned", message: "No active profile" };
+    if (ownsGun(g.id)) return { ok: false, reason: "owned", message: `${g.name} already owned` };
+    if (profile.coins < g.priceCoins) return { ok: false, reason: "coins", message: `Need ${(g.priceCoins - profile.coins).toLocaleString()} more coins` };
+    setProfile(prev => prev ? { ...prev, coins: prev.coins - g.priceCoins, ownedGuns: [...prev.ownedGuns, g.id] } : prev);
+    return { ok: true, message: `${g.name} added to armory!` };
+  };
+
+  const purchaseSkill = (s: Skill): PurchaseResult => {
+    if (!profile) return { ok: false, reason: "owned", message: "No active profile" };
+    if (ownsSkill(s.id)) return { ok: false, reason: "owned", message: `${s.name} already owned` };
+    if (profile.coins < s.priceCoins) return { ok: false, reason: "coins", message: `Need ${(s.priceCoins - profile.coins).toLocaleString()} more coins` };
+    setProfile(prev => prev ? { ...prev, coins: prev.coins - s.priceCoins, ownedSkills: [...prev.ownedSkills, s.id] } : prev);
+    return { ok: true, message: `${s.name} learned!` };
+  };
+
+  // ── Battle rewards ──
+  const awardBattleResults = (stats: BattleStats): BattleReward => {
+    const coinsEarned =
+      stats.kills * 50 +
+      (stats.topTen ? 100 : 0) +
+      (stats.won ? 500 : 0) +
+      (stats.survived ? 50 : 0);
+    const xpEarned =
+      stats.kills * 25 +
+      (stats.topTen ? 50 : 0) +
+      (stats.won ? 250 : 0) +
+      (stats.survived ? 25 : 0);
+
+    if (!profile) {
+      return { coinsEarned, xpEarned, diamondsEarned: 0, levelsGained: 0, newLevel: 1 };
+    }
+
+    let level = profile.level;
+    let xp = profile.xp + xpEarned;
+    let levelsGained = 0;
+    while (xp >= xpForLevel(level)) {
+      xp -= xpForLevel(level);
+      level += 1;
+      levelsGained += 1;
+      if (levelsGained > 20) break;
+    }
+    const diamondsEarned = levelsGained * DIAMONDS_PER_LEVEL;
+
+    setProfile(prev => prev ? {
+      ...prev,
+      coins: prev.coins + coinsEarned,
+      diamonds: prev.diamonds + diamondsEarned,
+      xp,
+      level,
+    } : prev);
+
+    return { coinsEarned, xpEarned, diamondsEarned, levelsGained, newLevel: level };
   };
 
   return (
@@ -183,7 +326,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
       toggleSkill,
       selectMap,
       addFriend,
-      removeFriend
+      removeFriend,
+      purchaseCharacter,
+      purchasePet,
+      purchaseGun,
+      purchaseSkill,
+      ownsCharacter,
+      ownsPet,
+      ownsGun,
+      ownsSkill,
+      awardBattleResults,
+      xpForLevel,
     }}>
       {children}
     </GameContext.Provider>

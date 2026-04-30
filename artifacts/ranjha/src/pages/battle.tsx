@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart, Shield, Crosshair, Users, Skull, MessageSquare, Volume2, ChevronUp,
   Flame, Pause, Backpack, Zap, Wind, ArrowUp, ArrowDown, Activity,
-  Bomb, CloudFog, Pill,
+  Bomb, CloudFog, Pill, Bot, Coins, Gem, Sparkles,
 } from "lucide-react";
 import { useGame } from "@/contexts/GameContext";
 
@@ -25,6 +25,16 @@ interface KillEvent {
   victim: string;
   weapon: string;
   isPlayer: boolean;
+  killerIsBot?: boolean;
+  victimIsBot?: boolean;
+}
+
+interface BattleReward {
+  coinsEarned: number;
+  xpEarned: number;
+  diamondsEarned: number;
+  levelsGained: number;
+  newLevel: number;
 }
 
 interface MiniPlayer {
@@ -47,8 +57,10 @@ const POSTURE_LABEL: Record<Posture, string> = { stand: "STAND", crouch: "CROUCH
 
 export default function Battle() {
   const [, setLocation] = useLocation();
-  const { selectedMap, selectedCharacter, selectedPet, selectedPrimaryGun, selectedSecondaryGun, profile } = useGame();
+  const { selectedMap, selectedCharacter, selectedPet, selectedPrimaryGun, selectedSecondaryGun, profile, awardBattleResults } = useGame();
   const mode = (sessionStorage.getItem("ranjha_battle_mode") as Mode) || "solo";
+  // In solo mode (and when there are no real lobby players) opponents are high-skill AI bots
+  const isAiLobby = mode === "solo";
 
   const [hp, setHp] = useState(100);
   const [armor, setArmor] = useState(75);
@@ -61,7 +73,9 @@ export default function Battle() {
   const [killFeed, setKillFeed] = useState<KillEvent[]>([]);
   const [showVictory, setShowVictory] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [reward, setReward] = useState<BattleReward | null>(null);
   const killIdRef = useRef(0);
+  const awardedRef = useRef(false);
 
   // Free Fire-style state
   const [posture, setPosture] = useState<Posture>("stand");
@@ -118,27 +132,36 @@ export default function Battle() {
     return () => clearInterval(t);
   }, [paused, showVictory]);
 
-  // Random kill feed events
+  // Random kill feed events — bots are more aggressive in solo (faster eliminations)
   useEffect(() => {
     if (paused || showVictory) return;
+    const interval = isAiLobby ? 3200 : 4500;
     const t = setInterval(() => {
       const killer = ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)];
       let victim = ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)];
       while (victim === killer) victim = ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)];
       const weapon = WEAPON_ICONS[Math.floor(Math.random() * WEAPON_ICONS.length)];
-      const ev: KillEvent = { id: ++killIdRef.current, killer, victim, weapon, isPlayer: false };
+      const ev: KillEvent = {
+        id: ++killIdRef.current,
+        killer, victim, weapon,
+        isPlayer: false,
+        killerIsBot: isAiLobby,
+        victimIsBot: isAiLobby,
+      };
       setKillFeed(prev => [ev, ...prev].slice(0, 6));
       setAlive(a => Math.max(1, a - 1));
-    }, 4500);
+    }, interval);
     return () => clearInterval(t);
-  }, [paused, showVictory]);
+  }, [paused, showVictory, isAiLobby]);
 
-  // Damage taken — reduced when crouching/prone
+  // Damage taken — reduced when crouching/prone, increased vs high-skill AI bots in solo
   useEffect(() => {
     if (paused || showVictory) return;
+    const tickMs = isAiLobby ? 5500 : 7000;
+    const botDmgMult = isAiLobby ? 1.3 : 1;
     const t = setInterval(() => {
       const reduce = posture === "prone" ? 0.4 : posture === "crouch" ? 0.65 : 1;
-      const dmg = Math.floor((Math.random() * 18 + 5) * reduce);
+      const dmg = Math.floor((Math.random() * 18 + 5) * reduce * botDmgMult);
       // damage absorption order: shield → armor → hp
       let remaining = dmg;
       if (shield > 0) {
@@ -152,9 +175,9 @@ export default function Battle() {
         remaining -= absorb;
       }
       if (remaining > 0) setHp(h => Math.max(0, h - remaining));
-    }, 7000);
+    }, tickMs);
     return () => clearInterval(t);
-  }, [paused, showVictory, armor, shield, posture]);
+  }, [paused, showVictory, armor, shield, posture, isAiLobby]);
 
   // Stamina drain when sprinting; regen otherwise
   useEffect(() => {
@@ -173,19 +196,40 @@ export default function Battle() {
     if (sprinting && (stamina <= 0 || posture !== "stand")) setSprinting(false);
   }, [stamina, posture, sprinting]);
 
-  // Win condition
+  // Win condition — also award rewards once
   useEffect(() => {
-    if (alive <= 1 && !showVictory) setShowVictory(true);
-  }, [alive, showVictory]);
+    if (alive <= 1 && !showVictory && hp > 0) {
+      setShowVictory(true);
+      if (!awardedRef.current) {
+        awardedRef.current = true;
+        const r = awardBattleResults({ kills, survived: true, won: true, topTen: true });
+        setReward(r);
+      }
+    }
+  }, [alive, showVictory, hp, kills, awardBattleResults]);
 
-  // Death
+  // Death — award rewards once, then return to lobby
   useEffect(() => {
     if (hp <= 0) {
-      const t = setTimeout(() => setLocation("/lobby"), 2500);
+      if (!awardedRef.current) {
+        awardedRef.current = true;
+        const survivedTopTen = alive <= 10;
+        const r = awardBattleResults({ kills, survived: false, won: false, topTen: survivedTopTen });
+        setReward(r);
+      }
+      const t = setTimeout(() => setLocation("/lobby"), 4500);
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [hp, setLocation]);
+  }, [hp, setLocation, kills, alive, awardBattleResults]);
+
+  // Show "AI BOTS — HIGH SKILL" notice once at start in solo
+  useEffect(() => {
+    if (isAiLobby) {
+      flash("Lobby filled with AI Bots — High Skill");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fire = () => {
     if (paused || showVictory || hp <= 0) return;
@@ -199,7 +243,14 @@ export default function Battle() {
     if (Math.random() < hitChance) {
       const victim = ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)];
       const weapon = selectedPrimaryGun?.name || "AK-47";
-      const ev: KillEvent = { id: ++killIdRef.current, killer: profile?.name || "You", victim, weapon, isPlayer: true };
+      const ev: KillEvent = {
+        id: ++killIdRef.current,
+        killer: profile?.name || "You",
+        victim,
+        weapon,
+        isPlayer: true,
+        victimIsBot: isAiLobby,
+      };
       setKillFeed(prev => [ev, ...prev].slice(0, 6));
       setKills(k => k + 1);
       setAlive(a => Math.max(1, a - 1));
@@ -256,7 +307,7 @@ export default function Battle() {
         if (k > 0) {
           for (let i = 0; i < k; i++) {
             const victim = ENEMY_NAMES[Math.floor(Math.random() * ENEMY_NAMES.length)];
-            setKillFeed(prev => [{ id: ++killIdRef.current, killer: profile?.name || "You", victim, weapon: "Grenade", isPlayer: true }, ...prev].slice(0, 6));
+            setKillFeed(prev => [{ id: ++killIdRef.current, killer: profile?.name || "You", victim, weapon: "Grenade", isPlayer: true, victimIsBot: isAiLobby }, ...prev].slice(0, 6));
           }
           setKills(c => c + k);
           setAlive(a => Math.max(1, a - k));
@@ -330,6 +381,11 @@ export default function Battle() {
         <div className="px-2.5 py-1 rounded-md bg-primary/20 border border-primary/40 text-primary text-[10px] font-display uppercase tracking-widest">
           {mode}
         </div>
+        {isAiLobby && (
+          <div className="px-2.5 py-1 rounded-md bg-orange-500/20 border border-orange-500/40 text-orange-300 text-[10px] font-display uppercase tracking-widest flex items-center gap-1" data-testid="badge-ai-lobby">
+            <Bot className="w-3 h-3" /> AI Bots
+          </div>
+        )}
         <button
           onClick={() => setPaused(p => !p)}
           className="w-8 h-8 rounded-md bg-black/60 border border-white/10 flex items-center justify-center hover:bg-white/10"
@@ -378,10 +434,12 @@ export default function Battle() {
               }`}
             >
               <span className={ev.isPlayer ? "text-primary font-bold" : ""}>{ev.killer}</span>
+              {ev.killerIsBot && <Bot className="w-3 h-3 text-orange-400" />}
               <Crosshair className="w-3 h-3 text-red-400" />
               <span className="text-[10px] text-white/40">{ev.weapon}</span>
               <Skull className="w-3 h-3 text-red-400" />
               <span className="text-white/70">{ev.victim}</span>
+              {ev.victimIsBot && <Bot className="w-3 h-3 text-orange-400/80" />}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -643,12 +701,36 @@ export default function Battle() {
         {hp <= 0 && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="absolute inset-0 z-40 bg-red-950/80 backdrop-blur-md flex flex-col items-center justify-center"
+            className="absolute inset-0 z-40 bg-red-950/80 backdrop-blur-md flex flex-col items-center justify-center px-6"
           >
             <Skull className="w-20 h-20 text-red-400 mb-4" />
             <h2 className="horror-title text-6xl text-red-400 mb-2">Eliminated</h2>
             <p className="text-white/70 font-display uppercase tracking-widest text-sm">Returning to lobby...</p>
             <div className="mt-6 text-sm text-white/50">Kills this match: <span className="text-primary font-bold">{kills}</span></div>
+
+            {reward && (
+              <div className="mt-6 max-w-md w-full rounded-xl bg-black/60 border border-white/10 p-4">
+                <div className="text-center text-[10px] uppercase tracking-[0.3em] text-white/50 font-display mb-3">Battle Rewards</div>
+                <div className="flex justify-around items-center">
+                  <RewardChip icon={Coins} value={`+${reward.coinsEarned.toLocaleString()}`} label="Coins" color="text-yellow-300" />
+                  <RewardChip icon={Sparkles} value={`+${reward.xpEarned.toLocaleString()}`} label="XP" color="text-emerald-300" />
+                  <RewardChip icon={Gem} value={`+${reward.diamondsEarned.toLocaleString()}`} label="Diamonds" color="text-cyan-300" />
+                </div>
+                {reward.levelsGained > 0 && (
+                  <div className="mt-3 text-center text-xs font-display uppercase tracking-widest text-primary">
+                    Leveled Up! → Level {reward.newLevel}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={() => setLocation("/lobby")}
+              className="mt-6 px-8 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-display font-bold uppercase tracking-widest rounded-lg text-sm"
+              data-testid="button-death-lobby"
+            >
+              Return to Lobby
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -666,9 +748,15 @@ export default function Battle() {
               <p className="text-white/70 font-display uppercase tracking-widest">You are the last legend standing in {selectedMap.name}</p>
               <div className="flex justify-center gap-6 pt-4">
                 <Stat label="Kills" value={kills.toString()} color="text-primary" />
-                <Stat label="XP" value="+250" color="text-emerald-400" />
-                <Stat label="Coins" value="+120" color="text-cyan-400" />
+                <Stat label="XP" value={reward ? `+${reward.xpEarned}` : "+0"} color="text-emerald-400" />
+                <Stat label="Coins" value={reward ? `+${reward.coinsEarned}` : "+0"} color="text-yellow-400" />
+                <Stat label="Diamonds" value={reward ? `+${reward.diamondsEarned}` : "+0"} color="text-cyan-400" />
               </div>
+              {reward && reward.levelsGained > 0 && (
+                <div className="mt-2 text-base font-display uppercase tracking-widest text-primary animate-pulse">
+                  Level Up! → Level {reward.newLevel}
+                </div>
+              )}
               <button
                 onClick={() => setLocation("/lobby")}
                 className="mt-6 px-8 py-3 bg-primary text-black font-display font-bold uppercase tracking-widest rounded-lg hover:scale-105 transition-transform"
@@ -730,6 +818,18 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
     <div className="text-center">
       <div className={`text-3xl font-display font-bold ${color}`}>{value}</div>
       <div className="text-[10px] uppercase tracking-widest text-white/50">{label}</div>
+    </div>
+  );
+}
+
+function RewardChip({ icon: Icon, value, label, color }: { icon: typeof Heart; value: string; label: string; color: string }) {
+  return (
+    <div className="text-center">
+      <div className={`flex items-center gap-1.5 justify-center ${color}`}>
+        <Icon className="w-4 h-4" />
+        <span className="font-display text-xl font-bold tabular-nums">{value}</span>
+      </div>
+      <div className="text-[10px] uppercase tracking-widest text-white/50 font-display mt-0.5">{label}</div>
     </div>
   );
 }

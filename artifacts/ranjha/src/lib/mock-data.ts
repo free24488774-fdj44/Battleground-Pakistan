@@ -84,67 +84,102 @@ const ABILITIES_POOL = [
   "Falcon Strike: Pet damage +30%",
 ];
 
+// Character price scales with unlock level: 12,000 (low) → ~10,000,000 (200)
+function characterPrice(unlockLevel: number): number {
+  if (unlockLevel <= 1) return 12000;
+  const raw = 12000 + Math.round(Math.pow(unlockLevel, 2.4) * 30);
+  return Math.min(10_000_000, raw);
+}
+
 export const CHARACTERS: Character[] = allCharNames.map((name, i) => {
   const ov = HERO_OVERRIDES[name];
   const face = pickFace(i);
   if (ov) {
+    const ul = (ov.unlockLevel ?? 1);
     return {
       id: `char_${i + 1}`,
       name,
       portrait: face,
+      priceCoins: characterPrice(ul),
       ...ov,
     } as Character;
   }
+  const unlockLevel = Math.min(200, 2 + i * 4);
   return {
     id: `char_${i + 1}`,
     name,
     rarity: RARITIES[i % RARITIES.length],
-    unlockLevel: Math.min(200, 2 + i * 4),
+    unlockLevel,
     ability: ABILITIES_POOL[i % ABILITIES_POOL.length],
     portrait: face,
     hp: 75 + ((i * 7) % 26),     // 75..100, deterministic
     speed: 70 + ((i * 11) % 26),  // 70..95
     skillPower: 60 + ((i * 13) % 36), // 60..95
+    priceCoins: characterPrice(unlockLevel),
   };
 });
 
+// Pet pricing scales with rarity (coins + diamonds). Squirrel is the free starter.
+const PET_PRICE: Record<string, { coins: number; diamonds: number }> = {
+  Common:    { coins: 500,    diamonds: 30 },
+  Rare:      { coins: 5000,   diamonds: 100 },
+  Epic:      { coins: 25000,  diamonds: 300 },
+  Legendary: { coins: 100000, diamonds: 1000 },
+  Mythic:    { coins: 500000, diamonds: 5000 },
+};
+const pp = (rarity: string, isStarter = false) =>
+  isStarter ? { priceCoins: 0, priceDiamonds: 0 } : { priceCoins: PET_PRICE[rarity].coins, priceDiamonds: PET_PRICE[rarity].diamonds };
+
 // ─── 15 Pets with unique images ─────────────────────────────────────────────
 export const PETS: Pet[] = [
-  { id: "pet_1",  name: "Squirrel",     rarity: "Common",    unlockLevel: 1,   ability: "Finds extra ammo in loot piles",                    image: petSquirrel },
-  { id: "pet_2",  name: "Rabbit",       rarity: "Common",    unlockLevel: 3,   ability: "Increases sprint speed by 2%",                      image: petRabbit },
-  { id: "pet_3",  name: "Monkey",       rarity: "Rare",      unlockLevel: 5,   ability: "Fights enemies in close combat",                    image: petMonkey },
-  { id: "pet_4",  name: "Hawk",         rarity: "Rare",      unlockLevel: 8,   ability: "Spots enemies on ridgelines and rooftops",          image: petHawk },
-  { id: "pet_5",  name: "Wolf",         rarity: "Epic",      unlockLevel: 10,  ability: "Howls to reveal nearby enemies on the mini-map",    image: petWolf },
-  { id: "pet_6",  name: "Elephant",     rarity: "Epic",      unlockLevel: 12,  ability: "Charges enemies, breaks through doors",             image: petElephant },
-  { id: "pet_7",  name: "Panther",      rarity: "Epic",      unlockLevel: 20,  ability: "Grants silent footsteps to the player",             image: petPanther },
-  { id: "pet_8",  name: "Falcon",       rarity: "Epic",      unlockLevel: 30,  ability: "Increases parachute drop speed during deployment",  image: petFalcon },
-  { id: "pet_9",  name: "Bear",         rarity: "Legendary", unlockLevel: 45,  ability: "Absorbs 1 bullet hit every 60s",                    image: petBear },
-  { id: "pet_10", name: "Lion",         rarity: "Legendary", unlockLevel: 60,  ability: "Intimidates enemies, reducing their fire rate",     image: petLion },
-  { id: "pet_11", name: "Tiger",        rarity: "Legendary", unlockLevel: 80,  ability: "Deals bleed damage on every hit",                   image: petTiger },
-  { id: "pet_12", name: "Snow Leopard", rarity: "Legendary", unlockLevel: 100, ability: "Grants thermal vision in snow areas",               image: petSnowLeopard },
-  { id: "pet_13", name: "Rhino",        rarity: "Legendary", unlockLevel: 130, ability: "Can break through destructible walls",              image: petRhino },
-  { id: "pet_14", name: "Komodo",       rarity: "Mythic",    unlockLevel: 160, ability: "Spits poison that slows enemies",                   image: petKomodo },
-  { id: "pet_15", name: "Phoenix",      rarity: "Mythic",    unlockLevel: 200, ability: "Revives the player once per match",                 image: petPhoenix },
+  { id: "pet_1",  name: "Squirrel",     rarity: "Common",    unlockLevel: 1,   ability: "Finds extra ammo in loot piles",                    image: petSquirrel,    ...pp("Common", true) },
+  { id: "pet_2",  name: "Rabbit",       rarity: "Common",    unlockLevel: 3,   ability: "Increases sprint speed by 2%",                      image: petRabbit,      ...pp("Common") },
+  { id: "pet_3",  name: "Monkey",       rarity: "Rare",      unlockLevel: 5,   ability: "Fights enemies in close combat",                    image: petMonkey,      ...pp("Rare") },
+  { id: "pet_4",  name: "Hawk",         rarity: "Rare",      unlockLevel: 8,   ability: "Spots enemies on ridgelines and rooftops",          image: petHawk,        ...pp("Rare") },
+  { id: "pet_5",  name: "Wolf",         rarity: "Epic",      unlockLevel: 10,  ability: "Howls to reveal nearby enemies on the mini-map",    image: petWolf,        ...pp("Epic") },
+  { id: "pet_6",  name: "Elephant",     rarity: "Epic",      unlockLevel: 12,  ability: "Charges enemies, breaks through doors",             image: petElephant,    ...pp("Epic") },
+  { id: "pet_7",  name: "Panther",      rarity: "Epic",      unlockLevel: 20,  ability: "Grants silent footsteps to the player",             image: petPanther,     ...pp("Epic") },
+  { id: "pet_8",  name: "Falcon",       rarity: "Epic",      unlockLevel: 30,  ability: "Increases parachute drop speed during deployment",  image: petFalcon,      ...pp("Epic") },
+  { id: "pet_9",  name: "Bear",         rarity: "Legendary", unlockLevel: 45,  ability: "Absorbs 1 bullet hit every 60s",                    image: petBear,        ...pp("Legendary") },
+  { id: "pet_10", name: "Lion",         rarity: "Legendary", unlockLevel: 60,  ability: "Intimidates enemies, reducing their fire rate",     image: petLion,        ...pp("Legendary") },
+  { id: "pet_11", name: "Tiger",        rarity: "Legendary", unlockLevel: 80,  ability: "Deals bleed damage on every hit",                   image: petTiger,       ...pp("Legendary") },
+  { id: "pet_12", name: "Snow Leopard", rarity: "Legendary", unlockLevel: 100, ability: "Grants thermal vision in snow areas",               image: petSnowLeopard, ...pp("Legendary") },
+  { id: "pet_13", name: "Rhino",        rarity: "Legendary", unlockLevel: 130, ability: "Can break through destructible walls",              image: petRhino,       ...pp("Legendary") },
+  { id: "pet_14", name: "Komodo",       rarity: "Mythic",    unlockLevel: 160, ability: "Spits poison that slows enemies",                   image: petKomodo,      ...pp("Mythic") },
+  { id: "pet_15", name: "Phoenix",      rarity: "Mythic",    unlockLevel: 200, ability: "Revives the player once per match",                 image: petPhoenix,     ...pp("Mythic") },
 ];
+
+// Gun pricing by category (coins)
+const GUN_PRICE: Record<string, number> = {
+  "Pistols": 1000,
+  "Throwables": 500,
+  "Melee": 1500,
+  "SMGs": 5000,
+  "Shotguns": 8000,
+  "Assault Rifles": 12000,
+  "LMGs": 20000,
+  "Snipers": 30000,
+};
+const gp = (cat: string) => ({ priceCoins: GUN_PRICE[cat] ?? 5000 });
 
 // ─── Guns ───────────────────────────────────────────────────────────────────
 export const GUNS: Gun[] = [
-  { id: "gun_1",  name: "AK-47",         category: "Assault Rifles", damage: 85, range: 60, rateOfFire: 65, image: gunAr },
-  { id: "gun_2",  name: "M4A1",          category: "Assault Rifles", damage: 75, range: 65, rateOfFire: 80, image: gunAr },
-  { id: "gun_3",  name: "AWM",           category: "Snipers",        damage: 100, range: 100, rateOfFire: 10, image: gunAr },
-  { id: "gun_4",  name: "Kar98K",        category: "Snipers",        damage: 90, range: 90, rateOfFire: 15, image: gunAr },
-  { id: "gun_5",  name: "MP5",           category: "SMGs",           damage: 45, range: 35, rateOfFire: 90, image: gunAr },
-  { id: "gun_6",  name: "UMP-45",        category: "SMGs",           damage: 50, range: 40, rateOfFire: 85, image: gunAr },
-  { id: "gun_7",  name: "Desert Eagle",  category: "Pistols",        damage: 65, range: 30, rateOfFire: 30, image: gunAr },
-  { id: "gun_8",  name: "Glock-18",      category: "Pistols",        damage: 30, range: 25, rateOfFire: 70, image: gunAr },
-  { id: "gun_9",  name: "M1014",         category: "Shotguns",       damage: 95, range: 15, rateOfFire: 25, image: gunAr },
-  { id: "gun_10", name: "S12K",          category: "Shotguns",       damage: 80, range: 20, rateOfFire: 40, image: gunAr },
-  { id: "gun_11", name: "M249",          category: "LMGs",           damage: 70, range: 55, rateOfFire: 85, image: gunAr },
-  { id: "gun_12", name: "Karambit",      category: "Melee",          damage: 55, range: 5,  rateOfFire: 95, image: gunAr },
-  { id: "gun_13", name: "Pan",           category: "Melee",          damage: 90, range: 5,  rateOfFire: 20, image: gunAr },
-  { id: "gun_14", name: "Frag Grenade",  category: "Throwables",     damage: 100, range: 40, rateOfFire: 0, image: gunAr },
-  { id: "gun_15", name: "Smoke",         category: "Throwables",     damage: 0,  range: 40, rateOfFire: 0, image: gunAr },
-  { id: "gun_16", name: "Molotov",       category: "Throwables",     damage: 80, range: 40, rateOfFire: 0, image: gunAr },
+  { id: "gun_1",  name: "AK-47",         category: "Assault Rifles", damage: 85, range: 60, rateOfFire: 65, image: gunAr, ...gp("Assault Rifles") },
+  { id: "gun_2",  name: "M4A1",          category: "Assault Rifles", damage: 75, range: 65, rateOfFire: 80, image: gunAr, ...gp("Assault Rifles") },
+  { id: "gun_3",  name: "AWM",           category: "Snipers",        damage: 100, range: 100, rateOfFire: 10, image: gunAr, ...gp("Snipers") },
+  { id: "gun_4",  name: "Kar98K",        category: "Snipers",        damage: 90, range: 90, rateOfFire: 15, image: gunAr, ...gp("Snipers") },
+  { id: "gun_5",  name: "MP5",           category: "SMGs",           damage: 45, range: 35, rateOfFire: 90, image: gunAr, ...gp("SMGs") },
+  { id: "gun_6",  name: "UMP-45",        category: "SMGs",           damage: 50, range: 40, rateOfFire: 85, image: gunAr, ...gp("SMGs") },
+  { id: "gun_7",  name: "Desert Eagle",  category: "Pistols",        damage: 65, range: 30, rateOfFire: 30, image: gunAr, ...gp("Pistols") },
+  { id: "gun_8",  name: "Glock-18",      category: "Pistols",        damage: 30, range: 25, rateOfFire: 70, image: gunAr, ...gp("Pistols") },
+  { id: "gun_9",  name: "M1014",         category: "Shotguns",       damage: 95, range: 15, rateOfFire: 25, image: gunAr, ...gp("Shotguns") },
+  { id: "gun_10", name: "S12K",          category: "Shotguns",       damage: 80, range: 20, rateOfFire: 40, image: gunAr, ...gp("Shotguns") },
+  { id: "gun_11", name: "M249",          category: "LMGs",           damage: 70, range: 55, rateOfFire: 85, image: gunAr, ...gp("LMGs") },
+  { id: "gun_12", name: "Karambit",      category: "Melee",          damage: 55, range: 5,  rateOfFire: 95, image: gunAr, ...gp("Melee") },
+  { id: "gun_13", name: "Pan",           category: "Melee",          damage: 90, range: 5,  rateOfFire: 20, image: gunAr, ...gp("Melee") },
+  { id: "gun_14", name: "Frag Grenade",  category: "Throwables",     damage: 100, range: 40, rateOfFire: 0, image: gunAr, ...gp("Throwables") },
+  { id: "gun_15", name: "Smoke",         category: "Throwables",     damage: 0,  range: 40, rateOfFire: 0, image: gunAr, ...gp("Throwables") },
+  { id: "gun_16", name: "Molotov",       category: "Throwables",     damage: 80, range: 40, rateOfFire: 0, image: gunAr, ...gp("Throwables") },
 ];
 
 export const OUTFITS: Outfit[] = [
@@ -163,12 +198,12 @@ export const OUTFITS: Outfit[] = [
 ];
 
 export const SKILLS: Skill[] = [
-  { id: "skill_1", name: "Mughal Fury",    type: "Active",  cooldown: 60, description: "Instantly heal 50 HP and gain 20% movement speed for 8s." },
-  { id: "skill_2", name: "Sindhi Shield",  type: "Active",  cooldown: 45, description: "Deploy a frontal energy shield that absorbs 500 damage." },
-  { id: "skill_3", name: "Pathan Rage",    type: "Passive", cooldown: 0,  description: "Damage increases by 10% for every enemy killed (max 3 stacks)." },
-  { id: "skill_4", name: "Punjabi Warcry", type: "Active",  cooldown: 90, description: "Reveal all enemies within 50m for 5 seconds." },
-  { id: "skill_5", name: "Sufi Mist",      type: "Active",  cooldown: 50, description: "Create a dense smoke screen that heals allies inside." },
-  { id: "skill_6", name: "Eagle Eye",      type: "Passive", cooldown: 0,  description: "Sniper rifles deal 15% more headshot damage." },
+  { id: "skill_1", name: "Mughal Fury",    type: "Active",  cooldown: 60, description: "Instantly heal 50 HP and gain 20% movement speed for 8s.",       priceCoins: 0 },
+  { id: "skill_2", name: "Sindhi Shield",  type: "Active",  cooldown: 45, description: "Deploy a frontal energy shield that absorbs 500 damage.",        priceCoins: 0 },
+  { id: "skill_3", name: "Pathan Rage",    type: "Passive", cooldown: 0,  description: "Damage increases by 10% for every enemy killed (max 3 stacks).", priceCoins: 8000 },
+  { id: "skill_4", name: "Punjabi Warcry", type: "Active",  cooldown: 90, description: "Reveal all enemies within 50m for 5 seconds.",                   priceCoins: 12000 },
+  { id: "skill_5", name: "Sufi Mist",      type: "Active",  cooldown: 50, description: "Create a dense smoke screen that heals allies inside.",          priceCoins: 15000 },
+  { id: "skill_6", name: "Eagle Eye",      type: "Passive", cooldown: 0,  description: "Sniper rifles deal 15% more headshot damage.",                   priceCoins: 20000 },
 ];
 
 // ─── 12 Maps with full GTA-style detail ─────────────────────────────────────
