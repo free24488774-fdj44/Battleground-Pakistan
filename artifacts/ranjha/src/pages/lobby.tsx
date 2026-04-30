@@ -171,7 +171,12 @@ export default function Lobby() {
 
                 {activeTab === "Maps" && MAPS.map(m => (
                   <div key={m.id} className={m.isMain ? "col-span-2 lg:col-span-3" : "col-span-2 lg:col-span-3"}>
-                     <MapCard map={m} isSelected={selectedMap.id === m.id} onClick={() => selectMap(m)} />
+                     <MapCard
+                       map={m}
+                       isSelected={selectedMap.id === m.id}
+                       onClick={() => selectMap(m)}
+                       onInfo={() => setLocation(`/map/${m.id}`)}
+                     />
                   </div>
                 ))}
 

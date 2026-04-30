@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Lock, Check } from "lucide-react";
+import { Lock, Check, Info } from "lucide-react";
 import { Character, Pet, Gun, Outfit, Skill, GameMap } from "@/lib/types";
 import { RarityBadge } from "./RarityBadge";
 import { StatBar } from "./StatBar";
@@ -106,7 +106,7 @@ export function GunCard({ gun, isSelected, onClick }: { gun: Gun, isSelected?: b
   );
 }
 
-export function MapCard({ map, isSelected, onClick }: { map: GameMap, isSelected?: boolean, onClick?: () => void }) {
+export function MapCard({ map, isSelected, onClick, onInfo }: { map: GameMap, isSelected?: boolean, onClick?: () => void, onInfo?: () => void }) {
   return (
     <motion.div
       whileHover={{ y: -5, scale: 1.02 }}
@@ -118,25 +118,39 @@ export function MapCard({ map, isSelected, onClick }: { map: GameMap, isSelected
     >
       <img src={map.image} alt={map.name} className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      
+
       {map.isMain && (
         <div className="absolute top-4 left-4">
           <div className="px-3 py-1 bg-secondary text-white text-xs font-display font-bold tracking-widest uppercase rounded">Main Battleground</div>
         </div>
       )}
 
-      {isSelected && (
-        <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-          <Check className="w-4 h-4 text-primary-foreground" />
-        </div>
-      )}
+      <div className="absolute top-3 right-3 flex gap-1.5">
+        {onInfo && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onInfo(); }}
+            className="px-2 py-1 rounded-md bg-black/70 hover:bg-black border border-white/20 backdrop-blur-md text-[10px] font-display uppercase tracking-widest text-white flex items-center gap-1"
+            data-testid={`button-map-info-${map.id}`}
+          >
+            <Info className="w-3 h-3" /> Details
+          </button>
+        )}
+        {isSelected && (
+          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+            <Check className="w-4 h-4 text-primary-foreground" />
+          </div>
+        )}
+      </div>
 
       <div className="absolute bottom-4 left-4 right-4">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-primary/80 font-display mb-0.5">{map.region}</div>
         <h3 className="font-display font-bold text-2xl text-white uppercase tracking-wider">{map.name}</h3>
-        <div className="flex gap-3 text-sm text-gray-300 font-display tracking-widest mt-1">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-300 font-display tracking-widest mt-1">
           <span>{map.players} PLAYERS</span>
           <span>•</span>
           <span>{map.climate.toUpperCase()}</span>
+          <span>•</span>
+          <span className="text-primary">LOOT: {map.lootTier.toUpperCase()}</span>
         </div>
       </div>
     </motion.div>

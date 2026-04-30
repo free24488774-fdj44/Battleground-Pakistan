@@ -60,3 +60,63 @@ id = "gyE__1mY3E_5YCrgpwUPE"
 uri = "file://artifacts/ranjha/src/assets/images/avatar-1.png"
 type = "image"
 title = "Player Avatar"
+
+[[generated]]
+id = "4I8jeVK7QwDSNkVag37-o"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-01.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "3w3upXHaxeE-rZQ0LTnpB"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-02.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "J3EDrRQQuUvRzSKWPRFkp"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-03.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "f3NGzHles5HcSMGSeNMGt"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-04.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "z0_SlEE5X9W6AFkXR2fDz"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-05.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "gu-HEmjNV7ZtCVVYLvJ-4"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-06.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "7U5bqyMwXMpr7EunsZMJ3"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-07.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Yjd05xHYKxwWb4OffXj6I"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-08.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "SzsTdGJxTs2B6uiEz75PI"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-09.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "h235ZngrYNwVtNCowe9Di"
+uri = "file://artifacts/ranjha/src/assets/images/characters/face-10.png"
+type = "image"
+title = "generated_image"

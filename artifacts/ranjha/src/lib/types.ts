@@ -45,12 +45,29 @@ export interface Skill {
   description: string;
 }
 
+export interface MapPOI {
+  name: string;
+  type: 'Loot' | 'Sniper' | 'Vehicle' | 'Safe' | 'Hot Zone' | 'Boss';
+  x: number; // % position 0-100
+  y: number;
+  description: string;
+}
+
 export interface GameMap {
   id: string;
   name: string;
+  region: string;
   image: string;
   players: number;
   climate: string;
+  terrain: string;
+  recommendedMode: 'Solo' | 'Duo' | 'Squad' | 'All';
+  lootTier: 'Low' | 'Medium' | 'High' | 'Extreme';
+  dangerLevel: 1 | 2 | 3 | 4 | 5;
+  description: string;
+  pois: MapPOI[];
+  weather: string;
+  vehicles: string[];
   isMain?: boolean;
 }
 
