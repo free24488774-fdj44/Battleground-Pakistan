@@ -13,6 +13,7 @@ import Battle from "@/pages/battle";
 import MapDetail from "@/pages/map-detail";
 import Live from "@/pages/live";
 import Profile from "@/pages/profile";
+import World from "@/pages/world";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/map/:id"><ProtectedRoute component={MapDetail} /></Route>
       <Route path="/live"><ProtectedRoute component={Live} /></Route>
       <Route path="/profile"><ProtectedRoute component={Profile} /></Route>
+      <Route path="/world"><ProtectedRoute component={World} /></Route>
       <Route component={NotFound} />
     </Switch>
   );
