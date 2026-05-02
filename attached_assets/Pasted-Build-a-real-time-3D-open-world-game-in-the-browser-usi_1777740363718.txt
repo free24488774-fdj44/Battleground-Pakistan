@@ -1,0 +1,156 @@
+Build a real-time 3D open-world game in the browser using Three.js.
+Do NOT use static images as maps.
+When a user selects a map, dynamically generate a fully explorable 3D environment.
+Core features:
+Create a 3D terrain (mountains, ground, rivers) using geometry and textures
+Add a controllable player with WASD movement and mouse look (first-person or third-person camera)
+Implement a camera that follows the player
+Add multiple objects: houses, trees, roads, rocks using 3D models or primitives
+Add NPC characters that move randomly
+Add collision detection so player cannot walk through objects
+Implement a real-time game loop using requestAnimationFrame
+Environment:
+Add lighting (sunlight + shadows)
+Add day/night cycle
+Add weather effects (rain, fog)
+Maps:
+Create multiple maps inspired by Pakistan regions (Hunza Valley, Lahore, Karachi)
+Each map must be a fully explorable 3D scene, not an image
+Load and unload maps dynamically on selection
+UI:
+Keep the existing UI overlay (health, ammo, minimap)
+Minimap should update based on player position in real-time
+Important:
+This is a game, not a static UI viewer
+Everything must be rendered in WebGL using Three.js
+Use modular structure (player, world, npc, controls)
+Goal:
+Make the experience similar to GTA-style free roam, not a fixed camera scene.
+2222222222222222222222222222222222222222222222222222222222222222
+Strictly avoid using <img> tags or static background images for maps. Use only WebGL rendering.
+333333333333333333333333333333333333333333333333333333333333333
+Create a minimal 3D first-person environment using Three.js.
+Requirements:
+Initialize a Three.js scene, camera, and renderer
+Add a large ground plane (grass texture or green color)
+Add lighting (directional light like sun + ambient light)
+Add a first-person camera using PointerLockControls
+Implement WASD movement (forward, backward, left, right)
+Add mouse look (camera rotates with mouse)
+Use requestAnimationFrame for a continuous game loop
+Prevent using any static background images
+Player:
+Camera acts as the player
+Movement should feel smooth and continuous
+Add basic gravity or keep player fixed on ground
+Environment:
+Add a few simple 3D objects (boxes as houses, cones as trees)
+Important:
+This must be a real-time 3D scene rendered with WebGL
+Do not build a UI-only screen
+Do not show any static map image
+Goal:
+Allow the user to walk around freely in a 3D world.
+444444444444444444444444444444444444444444444444444444444
+Use PointerLockControls from Three.js examples and ensure controls.lock() is triggered on click.
+55555555555555555555555555555555555555555555555555555555
+Upgrade the existing Three.js first-person scene into a realistic terrain environment.
+Terrain:
+Replace flat ground with a height-based terrain using PlaneGeometry with many segments
+Modify vertices using Perlin noise or Simplex noise to create mountains and valleys
+Scale heights to create large mountain ranges like Hunza Valley
+Textures:
+Apply realistic textures: grass for low areas, rock/snow for high areas
+Blend textures based on height
+Environment:
+Add a river using a blue reflective plane flowing through the terrain
+Add fog for depth
+Add sky color or skybox
+Objects:
+Scatter trees randomly (use cones/cylinders)
+Add rocks and small structures
+Lighting:
+Add directional light (sun) with shadows enabled
+Adjust light angle for realistic mountain shading
+Player:
+Keep existing WASD + mouse controls
+Ensure player stays above terrain (adjust Y position based on terrain height)
+Performance:
+Optimize geometry (not too dense but smooth enough)
+Use requestAnimationFrame loop
+Important:
+This must remain a real-time 3D environment
+Do not use static images
+Terrain must be explorable
+Goal:
+Create a natural open-world environment similar to Hunza Valley with mountains and river where the player can walk freely.
+6666666666666666666666666666666666666666666666666666
+Update player Y position based on terrain height using raycasting or height map lookup.
+7777777777777777777777777777777777777777777777777777777777777
+Use SimplexNoise for smoother terrain instead of random heights
+88888888888888888888888888888888888888888888888
+Enhance the existing Three.js open-world environment by adding life, structures, and navigation.
+Buildings:
+Add multiple buildings using simple geometries or GLTF models
+Create small villages and urban clusters
+Place buildings logically (near flat terrain or roads)
+Roads:
+Create road paths across the terrain using planes or textures
+Roads should connect buildings and areas
+Slightly flatten terrain under roads
+NPC System:
+Add multiple NPC characters (simple models or capsules)
+NPCs should walk randomly or follow paths (roads)
+Add basic AI movement (wander or loop paths)
+Prevent NPCs from walking through buildings
+Minimap:
+Create a 2D minimap overlay (top corner)
+Show player position in real-time
+Show NPC positions as dots
+Update continuously
+Player:
+Keep movement system
+Add collision detection with buildings and objects
+Environment polish:
+Add more trees, rocks, and props
+Improve placement density for realism
+Performance:
+Limit NPC count (5–20)
+Use simple models if needed
+Important:
+Everything must be interactive and real-time
+Do not convert anything into static images
+Maintain smooth performance in browser
+Goal:
+Turn the world into a living environment with people, structures, and navigation like a basic GTA-style experience.
+99999999999999999999999999999999999999999999999999999999
+Animate NPC movement using position updates inside the game loop.
+000000000000000000000000000000000000000000000000000000000
+Implement bounding box collision detection for buildings.
+55656565656565655565655555555555555555555555555556566666
+Render minimap using a top-down orthographic camera or 2D canvas overlay.
+7777777777777777777777775555555555555555555555555
+Use GLTFLoader to import real 3D models for buildings and characters.
+333333444444444444444444344444444444444444444444444444
+Enhance the Three.js open-world game by adding advanced gameplay systems.
+Day/Night Cycle:
+Animate directional light to simulate sun movement
+Gradually change sky color (day → sunset → night)
+Adjust light intensity over time
+Weather System:
+Add rain using particle system (falling lines or points)
+Add fog intensity variation
+Optionally add thunder/light flashes
+Combat System:
+Add shooting mechanic (mouse click to shoot)
+Use raycasting to detect hits
+If NPC is hit, reduce health or remove NPC
+Health System:
+Add player health (e.g., 100 HP)
+Reduce health when near NPCs or hazards
+Display health bar on screen
+UI (HUD):
+Show health bar
+Show ammo counter
+Show minimap (from previous step)
+Add crosshair at center of screen
