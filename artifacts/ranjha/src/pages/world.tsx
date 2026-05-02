@@ -190,6 +190,10 @@ export default function World(){
     container.appendChild(renderer.domElement);
 
     const scene=new THREE.Scene();
+
+    // ── Noise (must be before getH_hunza is called) ────────────────────────
+    const noise2D=createNoise2D();const noise2D2=createNoise2D();
+
     const farPlane=cfg.id==="hunza"?2000:900;
     const camera=new THREE.PerspectiveCamera(72,container.clientWidth/container.clientHeight,0.2,farPlane);
     if(cfg.id==="hunza")camera.position.set(0,getH_hunza(0,30)+3,30);
@@ -214,9 +218,6 @@ export default function World(){
     scene.add(sun);
     const fill=new THREE.DirectionalLight(0x4466aa,0.3);fill.position.set(-150,80,-100);scene.add(fill);
     const moon=new THREE.DirectionalLight(0x223355,0);moon.position.set(-100,120,-80);scene.add(moon);
-
-    // ── Noise ─────────────────────────────────────────────────────────────
-    const noise2D=createNoise2D();const noise2D2=createNoise2D();
 
     // ── Per-map height functions ───────────────────────────────────────────
     function getH_hunza(x:number,z:number):number{
