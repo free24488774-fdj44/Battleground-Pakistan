@@ -277,7 +277,8 @@ export default function World(){
       waterMeshRef=new THREE.Mesh(wG,new THREE.MeshLambertMaterial({color:0x1a66aa,transparent:true,opacity:0.82}));
       waterMeshRef.position.set(-40,-0.6,-TSIZE*0.62);scene.add(waterMeshRef);
       const bG=new THREE.PlaneGeometry(TSIZE,55);bG.rotateX(-Math.PI/2);
-      scene.add(Object.assign(new THREE.Mesh(bG,new THREE.MeshLambertMaterial({color:0xddd0a0})),{position:{set(x:number,y:number,z:number){return this.position.set(x,y,z);}}}).position.set(0,0.18,-TSIZE*0.36)&&new THREE.Mesh(bG,new THREE.MeshLambertMaterial({color:0xddd0a0})));
+      const beach=new THREE.Mesh(bG,new THREE.MeshLambertMaterial({color:0xddd0a0}));
+      beach.position.set(0,0.18,-TSIZE*0.36);scene.add(beach);
     }else if(cfg.id==="hunza"){
       const gG=new THREE.PlaneGeometry(18,TSIZE*0.9);gG.rotateX(-Math.PI/2);
       const glacier=new THREE.Mesh(gG,new THREE.MeshLambertMaterial({color:0x88d0e8,transparent:true,opacity:0.75}));
