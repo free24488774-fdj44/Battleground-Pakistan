@@ -119,11 +119,11 @@ export function MughalCourt() {
             <div 
               key={map.id}
               onClick={() => setSelectedMap(map.id)}
-              className={\`
+              className={`
                 relative mughal-border bg-[#180808]/80 backdrop-blur-md transition-all duration-300
                 border border-[#c9a84c]/30 cursor-pointer overflow-hidden group
-                \${selectedMap === map.id ? 'gold-glow bg-[#8b1a1a]/40 scale-[1.02]' : 'hover:border-[#c9a84c]/60'}
-              \`}
+                ${selectedMap === map.id ? 'gold-glow bg-[#8b1a1a]/40 scale-[1.02]' : 'hover:border-[#c9a84c]/60'}
+              `}
             >
               {selectedMap === map.id && (
                 <div className="absolute inset-0 bg-gradient-to-r from-[#c9a84c]/10 to-transparent pointer-events-none" />

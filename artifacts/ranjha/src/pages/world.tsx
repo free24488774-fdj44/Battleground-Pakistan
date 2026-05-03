@@ -520,18 +520,31 @@ export default function World(){
     const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85]};
     const [csx,csz]=carSpawns[cfg.id]||[20,-20];
     const carY=getH(csx,csz);
-    const carBodyM=new THREE.MeshLambertMaterial({color:cfg.id==="multan"?0xaa6622:cfg.id==="karachi"?0x2255aa:0x334455});
-    const carGlassM=new THREE.MeshLambertMaterial({color:0x88aacc,transparent:true,opacity:0.65});
+    const carBodyM=new THREE.MeshStandardMaterial({color:cfg.id==="multan"?0xa56a2a:cfg.id==="karachi"?0x214d8f:0x4a5664,roughness:0.55,metalness:0.25});
+    const carGlassM=new THREE.MeshStandardMaterial({color:0x91b6d8,transparent:true,opacity:0.55,roughness:0.12,metalness:0.08});
     const wheelM2=new THREE.MeshLambertMaterial({color:0x222222});
     const carGroup=new THREE.Group();
-    const carBody=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.65,5.0),carBodyM);carBody.position.y=0.55;carGroup.add(carBody);
-    const cab=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.62,2.2),carBodyM);cab.position.set(0,1.18,0.1);carGroup.add(cab);
-    const wshield=new THREE.Mesh(new THREE.PlaneGeometry(2.0,0.55),carGlassM);wshield.position.set(0,1.2,-0.98);wshield.rotation.x=0.28;carGroup.add(wshield);
+    const carBody=new THREE.Mesh(new THREE.BoxGeometry(2.45,0.58,4.7),carBodyM);carBody.position.y=0.55;carGroup.add(carBody);
+    const hood=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.38,1.25),carBodyM);hood.position.set(0,0.62,-1.52);hood.rotation.x=-0.08;carGroup.add(hood);
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(2.08,0.78,2.05),carBodyM);cab.position.set(0,1.18,0.2);carGroup.add(cab);
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(1.85,0.14,1.55),carBodyM);roof.position.set(0,1.62,0.18);carGroup.add(roof);
+    const grille=new THREE.Mesh(new THREE.BoxGeometry(1.65,0.2,0.14),new THREE.MeshStandardMaterial({color:0xdddddd,roughness:0.35,metalness:0.65}));grille.position.set(0,0.7,-2.34);carGroup.add(grille);
+    const bumper=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.18,0.18),new THREE.MeshStandardMaterial({color:0x1b1f25,roughness:0.85,metalness:0.1}));bumper.position.set(0,0.34,-2.22);carGroup.add(bumper);
+    const windshield=new THREE.Mesh(new THREE.PlaneGeometry(1.9,0.72),carGlassM);windshield.position.set(0,1.28,-0.92);windshield.rotation.x=0.35;carGroup.add(windshield);
+    const rearWindow=new THREE.Mesh(new THREE.PlaneGeometry(1.62,0.58),carGlassM);rearWindow.position.set(0,1.33,1.0);rearWindow.rotation.x=-0.27;carGroup.add(rearWindow);
+    [[-0.92,0.98,-0.12],[0.92,0.98,-0.12],[-0.92,0.98,0.88],[0.92,0.98,0.88]].forEach(([wx,wy,wz])=>{
+      const win=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.48,0.58),new THREE.MeshStandardMaterial({color:0x6c8094,transparent:true,opacity:0.3,roughness:0.15,metalness:0.05}));
+      win.position.set(wx,wy,wz);carGroup.add(win);
+    });
+    [[-1.45,0.28,-1.55],[1.45,0.28,-1.55],[-1.45,0.28,1.55],[1.45,0.28,1.55]].forEach(([wx,wy,wz])=>{
+      const arch=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.08,8,12),new THREE.MeshStandardMaterial({color:0x1b1b1b,roughness:0.95,metalness:0.05}));
+      arch.rotation.y=Math.PI/2;arch.position.set(wx,wy,wz);carGroup.add(arch);
+    });
     [[-1.4,0.4,-1.8],[1.4,0.4,-1.8],[-1.4,0.4,1.8],[1.4,0.4,1.8]].forEach(([wx,wy,wz])=>{
       const wheel=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.32,10),wheelM2);
       wheel.rotation.z=Math.PI/2;wheel.position.set(wx,wy,wz);carGroup.add(wheel);
     });
-    carGroup.position.set(csx,carY+0.42,csz);scene.add(carGroup);
+    carGroup.position.set(csx,carY+0.36,csz);scene.add(carGroup);
     carRef.current={group:carGroup,vel:0,heading:0,steer:0,inUse:false};
 
     // ── NPCs (humanoid models) ─────────────────────────────────────────────
@@ -737,20 +750,27 @@ export default function World(){
       // ── Car physics ──────────────────────────────────────────────────────
       const K=keysRef.current;
       if(car&&inCarRef.current){
-        if(K["KeyW"]||K["ArrowUp"])    car.vel+=9*dt;
-        if(K["KeyS"]||K["ArrowDown"])  car.vel-=6*dt;
-        if(K["Space"])                  car.vel*=0.88;
-        car.vel*=0.96;car.vel=Math.max(-8,Math.min(24,car.vel));
-        const sr=2.2*(1-Math.abs(car.vel)/30);
-        if(K["KeyA"]||K["ArrowLeft"])  car.heading+=sr*dt*(car.vel>=0?1:-1);
-        if(K["KeyD"]||K["ArrowRight"]) car.heading-=sr*dt*(car.vel>=0?1:-1);
-        car.group.position.x+=Math.sin(car.heading)*car.vel*dt;
-        car.group.position.z+=Math.cos(car.heading)*car.vel*dt;
+        const throttle=(K["KeyW"]||K["ArrowUp"]?1:0)-(K["KeyS"]||K["ArrowDown"]?0.7:0);
+        const steerInput=(K["KeyA"]||K["ArrowLeft"]?1:0)-(K["KeyD"]||K["ArrowRight"]?1:0);
+        const speed=Math.abs(car.vel);
+        car.vel+=throttle*(12.5-speed*0.18)*dt;
+        if(K["Space"]) car.vel*=0.93;
+        car.vel*=weatherRef.current==="storm"?0.985:weatherRef.current==="rain"?0.99:0.992;
+        car.vel=Math.max(-6,Math.min(28,car.vel));
+        car.steer += (steerInput-car.steer)*Math.min(1,dt*5.5);
+        const steerRate=(2.7-(Math.min(24,Math.abs(car.vel))*0.07))*dt;
+        car.heading += car.steer*steerRate*(car.vel>=0?1:-1);
+        const slip=0.86+Math.min(0.12,Math.abs(car.vel)*0.004);
+        car.group.position.x+=Math.sin(car.heading)*car.vel*dt*slip;
+        car.group.position.z+=Math.cos(car.heading)*car.vel*dt*slip;
         car.group.position.x=Math.max(-265,Math.min(265,car.group.position.x));
         car.group.position.z=Math.max(-265,Math.min(265,car.group.position.z));
-        car.group.position.y=getH(car.group.position.x,car.group.position.z)+0.42;
+        const groundY=getH(car.group.position.x,car.group.position.z);
+        car.group.position.y=groundY+0.32+Math.sin(Date.now()*0.01+car.vel*0.08)*0.03;
         car.group.rotation.y=car.heading;
-        camera.position.set(car.group.position.x,car.group.position.y+3.5,car.group.position.z);
+        car.group.rotation.z=-car.steer*0.05;
+        car.group.rotation.x=Math.sin(car.vel*0.02)*0.01;
+        camera.position.set(car.group.position.x,car.group.position.y+3.15,car.group.position.z);
       }
 
       // ── Mobile car trigger ───────────────────────────────────────────────

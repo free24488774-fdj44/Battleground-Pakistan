@@ -125,9 +125,9 @@ export function ContemporaryDesi() {
               <div
                 key={map.id}
                 onClick={() => setSelectedMap(map.id)}
-                className={\`relative bg-[#0d1117] border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col \${
+                className={`relative bg-[#0d1117] border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col ${
                   isSelected ? 'border-[#E8A020] shadow-[0_0_20px_rgba(232,160,32,0.15)]' : 'border-zinc-800 hover:border-zinc-700'
-                }\`}
+                }`}
               >
                 {/* Left Color Band */}
                 <div 
