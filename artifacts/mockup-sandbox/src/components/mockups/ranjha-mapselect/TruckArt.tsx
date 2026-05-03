@@ -44,7 +44,7 @@ export function TruckArt() {
   const [selectedMap, setSelectedMap] = useState<string | null>(null);
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#001A11] text-white overflow-x-hidden font-sans pb-12 selection:bg-[#FF006E] selection:text-white relative">
+    <div className="min-h-[100dvh] w-full bg-[#07130d] text-white overflow-x-hidden font-sans pb-12 selection:bg-[#FF006E] selection:text-white relative">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap');
         
@@ -97,7 +97,7 @@ export function TruckArt() {
 
         .card-hover:hover {
           transform: translateY(-4px) scale(1.02);
-          box-shadow: 0 10px 30px -10px var(--main-color);
+          box-shadow: 0 18px 42px -14px var(--main-color), 0 0 0 1px rgba(255,255,255,0.08) inset;
         }
         
         .card-hover:hover .border-maximalist::before {
@@ -118,7 +118,7 @@ export function TruckArt() {
 
       <div className="px-4 max-w-md mx-auto">
         <header className="flex justify-between items-center mb-10 relative">
-          <button className="flex items-center justify-center w-12 h-12 bg-[#FF006E] text-white font-black border-4 border-[#FFD700] shadow-[4px_4px_0_#00E5FF] hover:translate-y-1 hover:shadow-[2px_2px_0_#00E5FF] transition-all">
+          <button className="flex items-center justify-center w-12 h-12 bg-[#FF006E] text-white font-black border-4 border-[#FFD700] shadow-[6px_6px_0_#00E5FF] hover:translate-y-1 hover:shadow-[3px_3px_0_#00E5FF] transition-all">
             <ArrowLeft strokeWidth={4} />
           </button>
           
@@ -137,8 +137,8 @@ export function TruckArt() {
           </div>
         </header>
 
-        <h2 className="text-center font-black text-2xl mb-8 tracking-widest text-white uppercase" style={{
-          textShadow: '2px 2px 0 #00E5FF, -1px -1px 0 #FF006E'
+        <h2 className="text-center font-black text-2xl mb-8 tracking-[0.22em] text-white uppercase" style={{
+          textShadow: '2px 2px 0 #00E5FF, -1px -1px 0 #FF006E, 0 8px 20px rgba(0,0,0,0.5)'
         }}>
           Select Battlefield
         </h2>
@@ -153,11 +153,11 @@ export function TruckArt() {
                 '--accent-color': map.accent,
               } as React.CSSProperties}
             >
-              <div 
+                <div 
                 className="p-1 relative z-10"
                 style={{ backgroundColor: map.bg }}
               >
-                <div className="border-4 border-dashed border-[rgba(255,255,255,0.3)] p-5 relative overflow-hidden">
+                <div className="border-4 border-dashed border-[rgba(255,255,255,0.3)] p-5 relative overflow-hidden rounded-sm">
                   
                   {/* Decorative corners */}
                   <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4" style={{ borderColor: map.color }}></div>
@@ -166,7 +166,7 @@ export function TruckArt() {
                   <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4" style={{ borderColor: map.color }}></div>
 
                   {/* Motif background */}
-                  <div className="absolute -right-16 -top-16 w-48 h-48 sun-motif opacity-20"></div>
+                  <div className="absolute -right-16 -top-16 w-48 h-48 sun-motif opacity-24"></div>
 
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-2">
@@ -186,11 +186,11 @@ export function TruckArt() {
 
                     <button 
                       onClick={() => setSelectedMap(map.id)}
-                      className="w-full py-4 px-6 font-black text-xl uppercase tracking-widest flex justify-between items-center transition-all group"
+                      className="w-full py-4 px-6 font-black text-xl uppercase tracking-[0.18em] flex justify-between items-center transition-all group"
                       style={{ 
                         backgroundColor: selectedMap === map.id ? '#FFD700' : map.color,
                         color: selectedMap === map.id ? '#000' : '#fff',
-                        boxShadow: `4px 4px 0 ${map.accent}`
+                        boxShadow: `6px 6px 0 ${map.accent}`
                       }}
                     >
                       <span>{selectedMap === map.id ? 'Selected' : 'Deploy Here'}</span>
