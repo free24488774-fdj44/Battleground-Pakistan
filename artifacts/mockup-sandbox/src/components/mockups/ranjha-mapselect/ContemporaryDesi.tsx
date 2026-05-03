@@ -57,7 +57,7 @@ export function ContemporaryDesi() {
             background-size: 24px 24px;
           }
           .desi-sheen {
-            background: radial-gradient(circle at top, rgba(232,160,32,0.14), transparent 45%), linear-gradient(180deg, rgba(255,255,255,0.03), transparent 25%);
+            background: radial-gradient(circle at top, rgba(232,160,32,0.18), transparent 45%), linear-gradient(180deg, rgba(255,255,255,0.04), transparent 22%);
           }
           
           .crescent {
@@ -90,10 +90,10 @@ export function ContemporaryDesi() {
       </style>
 
       {/* Mobile Container */}
-      <div className="w-full max-w-[390px] h-full relative flex flex-col desi-grid desi-sheen bg-[#040f06]">
+      <div className="w-full max-w-[390px] h-full relative flex flex-col desi-grid desi-sheen bg-[#031009]">
         {/* Header */}
         <header className="px-6 pt-12 pb-6 relative z-10 flex flex-col gap-4 border-b border-[#01411C]/30">
-          <button className="flex items-center text-zinc-400 hover:text-white transition-colors w-fit group bg-white/5 border border-white/10 rounded-full px-3 py-2">
+          <button className="flex items-center text-zinc-400 hover:text-white transition-colors w-fit group bg-white/5 border border-white/10 rounded-full px-3 py-2 backdrop-blur">
             <ChevronLeft className="w-5 h-5 mr-1 group-hover:-translate-x-1 transition-transform" />
             <span className="uppercase text-sm tracking-widest font-medium">Lobby</span>
           </button>
@@ -114,7 +114,7 @@ export function ContemporaryDesi() {
             </div>
           </div>
           
-          <div className="text-zinc-400 text-sm tracking-[0.22em] mt-2 uppercase">
+          <div className="text-zinc-400 text-sm tracking-[0.28em] mt-2 uppercase">
             SELECT DEPLOYMENT ZONE
           </div>
         </header>
@@ -128,8 +128,8 @@ export function ContemporaryDesi() {
               <div
                 key={map.id}
                 onClick={() => setSelectedMap(map.id)}
-                className={`relative bg-[#0d1117] border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col rounded-2xl ${
-                  isSelected ? 'border-[#E8A020] shadow-[0_0_28px_rgba(232,160,32,0.18)] scale-[1.01]' : 'border-zinc-800 hover:border-zinc-700'
+                className={`relative bg-[#0d1117] border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col rounded-[1.25rem] ${
+                  isSelected ? 'border-[#E8A020] shadow-[0_0_34px_rgba(232,160,32,0.2)] scale-[1.015]' : 'border-zinc-800 hover:border-zinc-700'
                 }`}
               >
                 {/* Left Color Band */}
@@ -140,7 +140,7 @@ export function ContemporaryDesi() {
 
                 <div className="p-5 pl-6 flex flex-col gap-3">
                   <div className="flex justify-between items-start">
-                    <h3 className="text-xl font-bold text-white tracking-[0.12em]">
+                    <h3 className="text-xl font-bold text-white tracking-[0.16em]">
                       {map.name}
                     </h3>
                     <span 
@@ -169,7 +169,7 @@ export function ContemporaryDesi() {
                   </div>
                   
                   {isSelected && (
-                    <button className="mt-3 w-full bg-[#01411C] hover:bg-[#015423] text-white py-3 font-bold uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-black/20">
+                    <button className="mt-3 w-full bg-[#01411C] hover:bg-[#015423] text-white py-3 font-bold uppercase tracking-[0.24em] transition-colors flex items-center justify-center gap-2 rounded-xl shadow-lg shadow-black/20">
                       <Check className="w-4 h-4" />
                       Deploy Here
                     </button>

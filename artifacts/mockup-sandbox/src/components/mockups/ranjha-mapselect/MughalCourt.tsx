@@ -36,17 +36,18 @@ export function MughalCourt() {
   const [selectedMap, setSelectedMap] = useState<string | null>(null);
 
   return (
-    <div className="relative min-h-[100dvh] w-full max-w-[390px] mx-auto overflow-hidden bg-[#07060f] text-[#f5f0e0] font-sans flex flex-col items-center select-none shadow-2xl shadow-black">
+    <div className="relative min-h-[100dvh] w-full max-w-[390px] mx-auto overflow-hidden bg-[#05040a] text-[#f5f0e0] font-sans flex flex-col items-center select-none shadow-2xl shadow-black">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&display=swap');
         
         .font-cinzel { font-family: 'Cinzel', serif; }
         
         .mughal-bg {
-          background-color: #07060f;
+          background-color: #05040a;
           background-image:
-            radial-gradient(circle at 50% 0%, rgba(201, 168, 76, 0.16) 0%, rgba(7, 6, 15, 0) 42%),
-            radial-gradient(circle at 50% 100%, rgba(139, 26, 26, 0.12) 0%, rgba(7, 6, 15, 0) 55%);
+            radial-gradient(circle at 50% 0%, rgba(201, 168, 76, 0.20) 0%, rgba(5, 4, 10, 0) 42%),
+            radial-gradient(circle at 50% 100%, rgba(139, 26, 26, 0.15) 0%, rgba(5, 4, 10, 0) 55%),
+            linear-gradient(180deg, rgba(255,255,255,0.03), transparent 24%);
         }
         
         .mughal-border {
@@ -56,21 +57,21 @@ export function MughalCourt() {
         .mughal-border::before {
           content: '';
           position: absolute;
-          inset: 4px;
-          border: 1px solid rgba(201, 168, 76, 0.4);
+          inset: 5px;
+          border: 1px solid rgba(201, 168, 76, 0.55);
           pointer-events: none;
         }
         
         .mughal-border::after {
           content: '';
           position: absolute;
-          inset: 8px;
-          border: 1px solid rgba(201, 168, 76, 0.15);
+          inset: 10px;
+          border: 1px solid rgba(201, 168, 76, 0.18);
           pointer-events: none;
         }
         
         .gold-glow {
-          box-shadow: 0 0 22px rgba(201, 168, 76, 0.55), 0 0 60px rgba(201, 168, 76, 0.12);
+          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.38), 0 0 28px rgba(201, 168, 76, 0.35), 0 0 80px rgba(201, 168, 76, 0.10);
         }
         
         .star-pattern {
@@ -79,23 +80,23 @@ export function MughalCourt() {
       `}</style>
 
       {/* Decorative corners */}
-      <div className="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-[#c9a84c] opacity-60 m-3 pointer-events-none" />
-      <div className="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-[#c9a84c] opacity-60 m-3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-[#c9a84c] opacity-60 m-3 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-[#c9a84c] opacity-60 m-3 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-20 h-20 border-t border-l border-[#c9a84c]/70 m-3 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-20 h-20 border-t border-r border-[#c9a84c]/70 m-3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-20 h-20 border-b border-l border-[#c9a84c]/70 m-3 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-20 h-20 border-b border-r border-[#c9a84c]/70 m-3 pointer-events-none" />
 
       {/* Main Container */}
       <div className="relative z-10 w-full flex flex-col h-full mughal-bg star-pattern">
         
         {/* Header */}
         <header className="w-full flex items-center justify-between px-6 pt-6 pb-2 relative">
-          <button className="text-[#c9a84c] hover:text-[#f5f0e0] transition-colors flex items-center gap-1 z-20 bg-white/5 px-3 py-2 rounded-full border border-[#c9a84c]/20">
+          <button className="text-[#c9a84c] hover:text-[#f5f0e0] transition-colors flex items-center gap-1 z-20 bg-white/5 px-3 py-2 rounded-full border border-[#c9a84c]/25 backdrop-blur">
             <ChevronLeft size={20} />
             <span className="text-xs uppercase tracking-[0.28em] font-cinzel">Lobby</span>
           </button>
           
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-2">
-            <h1 className="font-cinzel text-3xl font-black text-[#c9a84c] tracking-[0.34em] shadow-[#c9a84c]/20 drop-shadow-[0_8px_20px_rgba(201,168,76,0.25)]">RANJHA</h1>
+            <h1 className="font-cinzel text-3xl font-black text-[#c9a84c] tracking-[0.38em] shadow-[#c9a84c]/20 drop-shadow-[0_10px_24px_rgba(201,168,76,0.28)]">RANJHA</h1>
           </div>
           
           <div className="w-16" /> {/* Spacer */}
@@ -109,8 +110,8 @@ export function MughalCourt() {
         </div>
 
         <div className="px-6 pb-2 text-center">
-          <h2 className="font-cinzel text-sm text-[#c9a84c] uppercase tracking-[0.28em] mb-2">Select Battlefield</h2>
-          <p className="text-xs text-[#f5f0e0]/72 italic font-serif px-4 leading-relaxed">
+          <h2 className="font-cinzel text-sm text-[#c9a84c] uppercase tracking-[0.34em] mb-2">Select Battlefield</h2>
+          <p className="text-xs text-[#f5f0e0]/72 italic font-serif px-4 leading-relaxed max-w-[320px] mx-auto">
             "Decree of the Emperor: Choose where thy fate shall be sealed in blood."
           </p>
         </div>
@@ -122,9 +123,9 @@ export function MughalCourt() {
               key={map.id}
               onClick={() => setSelectedMap(map.id)}
               className={`
-                relative mughal-border bg-[#160b12]/82 backdrop-blur-md transition-all duration-300
+                relative mughal-border bg-[#120910]/88 backdrop-blur-md transition-all duration-300
                 border border-[#c9a84c]/30 cursor-pointer overflow-hidden group
-                ${selectedMap === map.id ? 'gold-glow bg-[#8b1a1a]/42 scale-[1.02]' : 'hover:border-[#c9a84c]/60 hover:bg-[#1b0f18]'}
+                ${selectedMap === map.id ? 'gold-glow bg-[#8b1a1a]/42 scale-[1.02]' : 'hover:border-[#c9a84c]/60 hover:bg-[#190e16]'}
               `}
             >
               {selectedMap === map.id && (
@@ -138,10 +139,10 @@ export function MughalCourt() {
                       {map.icon}
                     </span>
                     <div>
-                      <h3 className="font-cinzel text-lg font-bold text-[#c9a84c] tracking-[0.2em] uppercase">
+                      <h3 className="font-cinzel text-lg font-bold text-[#c9a84c] tracking-[0.26em] uppercase">
                         {map.name}
                       </h3>
-                      <div className="text-[10px] text-[#f5f0e0]/60 uppercase tracking-[0.28em] mt-0.5 font-cinzel">
+                      <div className="text-[10px] text-[#f5f0e0]/60 uppercase tracking-[0.34em] mt-0.5 font-cinzel">
                         {map.biome}
                       </div>
                     </div>
@@ -168,10 +169,10 @@ export function MughalCourt() {
           <button 
             disabled={!selectedMap}
             className={\`
-              pointer-events-auto font-cinzel uppercase tracking-[0.2em] py-3 px-12 border border-[#c9a84c]
+              pointer-events-auto font-cinzel uppercase tracking-[0.28em] py-3 px-12 border border-[#c9a84c]
               transition-all duration-500 relative overflow-hidden group font-bold text-sm
               \${selectedMap 
-                ? 'text-[#0a0818] bg-[#c9a84c] hover:bg-[#d4b966] gold-glow shadow-[0_10px_35px_rgba(201,168,76,0.2)]' 
+                ? 'text-[#0a0818] bg-[#c9a84c] hover:bg-[#d4b966] gold-glow shadow-[0_12px_38px_rgba(201,168,76,0.22)]' 
                 : 'text-[#c9a84c]/50 border-[#c9a84c]/30 bg-transparent'}
             \`}
           >
