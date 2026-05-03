@@ -86,6 +86,15 @@ interface NPC{group:THREE.Group;bodyMesh:THREE.Mesh;hp:number;maxHp:number;
   waypoints:THREE.Vector3[];wpIdx:number;alertTimer:number;attackCooldown:number;}
 interface PickupItem{mesh:THREE.Object3D;active:boolean;respawnTimer:number;}
 interface CarState{group:THREE.Group;vel:number;heading:number;steer:number;inUse:boolean;}
+type WeaponType="pistol"|"ak47"|"shotgun"|"sniper";
+interface WeaponPickup{mesh:THREE.Group;active:boolean;type:WeaponType;respawnTimer:number;}
+interface GrenadeObj{mesh:THREE.Mesh;vel:THREE.Vector3;alive:boolean;timer:number;exploded:boolean;}
+const WEAPON_CFG:{[k in WeaponType]:{dmg:number;rate:number;spread:number;maxAmmo:number;pellets:number;label:string;col:number}}={
+  pistol: {dmg:28,rate:320, spread:0.025,maxAmmo:12,pellets:1,label:"Pistol",  col:0x8899aa},
+  ak47:   {dmg:36,rate:110, spread:0.035,maxAmmo:30,pellets:1,label:"AK-47",   col:0x554422},
+  shotgun:{dmg:18,rate:850, spread:0.18, maxAmmo:8, pellets:6,label:"Shotgun", col:0x774433},
+  sniper: {dmg:90,rate:1600,spread:0.003,maxAmmo:5, pellets:1,label:"Sniper",  col:0x334455},
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Constants
@@ -123,7 +132,14 @@ export default function World(){
   const [isOnGround,setIsOnGround]=useState(true);
   const [inCar,setInCar]      =useState(false);
   const [nearCar,setNearCar]  =useState(false);
-  const [sprintOn,setSprintOn]=useState(false); // mobile sprint toggle UI
+  const [sprintOn,setSprintOn]=useState(false);
+  const [weapon,setWeapon]    =useState<WeaponType>("ak47");
+  const [shield,setShield]    =useState(0);
+  const [grenadeCount,setGrenadeCount]=useState(2);
+  const [zoneRadius,setZoneRadius]    =useState(260);
+  const [outsideZone,setOutsideZone]  =useState(false);
+  const [npcBars,setNpcBars]  =useState<{id:number;x:number;y:number;hp:number;maxHp:number}[]>([]);
+  const [explFlash,setExplFlash]=useState(false);
 
   // ── Refs accessible from both useEffect AND JSX buttons ─────────────────
   const playingRef   =useRef(false);
@@ -163,17 +179,33 @@ export default function World(){
   const velYRef  =useRef(0);const onGnd=useRef(true);
   const carRef   =useRef<CarState|null>(null);
   const inCarRef =useRef(false);
+  const weaponRef       =useRef<WeaponType>("ak47");
+  const shieldRef       =useRef(0);
+  const grenadeCountRef =useRef(2);
+  const weaponPickRef   =useRef<WeaponPickup[]>([]);
+  const armorPickRef    =useRef<PickupItem[]>([]);
+  const activeGrnadesRef=useRef<GrenadeObj[]>([]);
+  const zoneRadiusRef   =useRef(260);
+  const zoneTargetRef   =useRef(140);
+  const zoneShrinkTimerRef=useRef(55);
+  const mGrenadeRef     =useRef(false);
 
   useEffect(()=>{
     if(!selectedMap)return;
     hpRef.current=100;setHp(100);ammoRef.current=30;setAmmo(30);
     stamRef.current=100;setStamina(100);killsRef.current=0;setKills(0);
     comboRef.current=0;setCombo(0);npcsRef.current=[];
-    ammoPickRef.current=[];hpPickRef.current=[];
+    ammoPickRef.current=[];hpPickRef.current=[];armorPickRef.current=[];
+    weaponPickRef.current=[];activeGrnadesRef.current=[];
     weatherRef.current="clear";setWeather("clear");
     velYRef.current=0;onGnd.current=true;
     inCarRef.current=false;setInCar(false);
     playingRef.current=false;setPlaying(false);
+    weaponRef.current="ak47";setWeapon("ak47");
+    shieldRef.current=0;setShield(0);
+    grenadeCountRef.current=2;setGrenadeCount(2);
+    zoneRadiusRef.current=260;zoneTargetRef.current=140;zoneShrinkTimerRef.current=55;
+    setZoneRadius(260);setOutsideZone(false);setNpcBars([]);setExplFlash(false);
   },[selectedMap]);
 
   useEffect(()=>{
@@ -578,59 +610,125 @@ export default function World(){
     const rainMesh=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:0xaaddff,size:0.16,transparent:true,opacity:0.45}));
     rainMesh.visible=false;scene.add(rainMesh);
 
+    // ── Safe zone ring ────────────────────────────────────────────────────
+    const zoneRingMat=new THREE.MeshBasicMaterial({color:0x22aaff,transparent:true,opacity:0.5,side:THREE.DoubleSide});
+    const zoneRingGeo=new THREE.TorusGeometry(zoneRadiusRef.current,1.5,8,80);
+    const zoneRing=new THREE.Mesh(zoneRingGeo,zoneRingMat);zoneRing.rotation.x=Math.PI/2;zoneRing.position.y=2;scene.add(zoneRing);
+    const zoneWallMat=new THREE.MeshBasicMaterial({color:0x2255ff,transparent:true,opacity:0.06,side:THREE.DoubleSide});
+    const zoneWall=new THREE.Mesh(new THREE.CylinderGeometry(zoneRadiusRef.current,zoneRadiusRef.current,80,80,1,true),zoneWallMat);
+    zoneWall.position.y=40;scene.add(zoneWall);
+
+    // ── Weapon pickups ────────────────────────────────────────────────────
+    const wTypes:WeaponType[]=["pistol","ak47","shotgun","sniper","ak47","pistol","shotgun","sniper","ak47","pistol"];
+    const wPositions=[[18,25],[-22,15],[40,-30],[-35,45],[55,55],[-55,-50],[80,0],[0,80],[30,60],[-60,30]];
+    wPositions.forEach(([px,pz],i)=>{
+      const wt=wTypes[i%wTypes.length];const wcfg=WEAPON_CFG[wt];
+      const g=new THREE.Group();
+      const body=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.09,0.44),new THREE.MeshStandardMaterial({color:wcfg.col,roughness:0.45,metalness:0.5}));
+      body.castShadow=false;g.add(body);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.055,6,20),new THREE.MeshBasicMaterial({color:0xffcc00,transparent:true,opacity:0.82}));
+      ring.rotation.x=Math.PI/2;ring.position.y=-0.18;g.add(ring);
+      const gy=getH(px,pz);g.position.set(px,gy+0.55,pz);scene.add(g);
+      weaponPickRef.current.push({mesh:g,active:true,type:wt,respawnTimer:0});
+    });
+
+    // ── Armor pickups (blue cubes) ─────────────────────────────────────────
+    [[12,-22],[-16,36],[44,12],[-44,-22],[26,70],[-30,-65],[66,44],[-64,26],[0,45],[-50,10]].forEach(([ax,az])=>{
+      const ay=getH(ax,az);const ag=new THREE.Group();
+      const body=new THREE.Mesh(new THREE.BoxGeometry(0.85,0.85,0.85),new THREE.MeshStandardMaterial({color:0x2255ff,roughness:0.4,metalness:0.3,emissive:0x112244,emissiveIntensity:0.5}));
+      const c1=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.55,0.2),new THREE.MeshBasicMaterial({color:0xffffff}));
+      const c2=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.2,0.2),new THREE.MeshBasicMaterial({color:0xffffff}));
+      ag.add(body,c1,c2);ag.position.set(ax,ay+0.8,az);scene.add(ag);
+      armorPickRef.current.push({mesh:ag,active:true,respawnTimer:0});
+    });
+
+    // ── Grenade pickup ────────────────────────────────────────────────────
+    [[20,-15],[-20,20],[55,-10],[-40,55],[0,-60],[70,30],[-70,-30],[30,90]].forEach(([gx,gz])=>{
+      const gm=new THREE.Mesh(new THREE.SphereGeometry(0.35,8,6),new THREE.MeshStandardMaterial({color:0x44aa22,roughness:0.6,metalness:0.3}));
+      gm.position.set(gx,getH(gx,gz)+0.55,gz);scene.add(gm);
+      ammoPickRef.current.push({mesh:gm,active:true,respawnTimer:0});  // tag on ammo for respawn logic
+    });
+
     // ── Raycaster / Shooting ───────────────────────────────────────────────
     const raycaster=new THREE.Raycaster();
     function spawnDrop(pos:THREE.Vector3){
       const m=new THREE.Mesh(new THREE.SphereGeometry(0.5,6,6),new THREE.MeshLambertMaterial({color:0xffcc00}));
       m.position.copy(pos).setY(pos.y+1.0);scene.add(m);ammoPickRef.current.push({mesh:m,active:true,respawnTimer:0});
     }
+    function throwGrenade(){
+      if(grenadeCountRef.current<=0){flash("No grenades!");return;}
+      grenadeCountRef.current--;setGrenadeCount(grenadeCountRef.current);
+      const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+      const vel=dir.multiplyScalar(14).add(new THREE.Vector3(0,6,0));
+      const gMesh=new THREE.Mesh(new THREE.SphereGeometry(0.22,7,6),new THREE.MeshStandardMaterial({color:0x44aa22,roughness:0.6,metalness:0.3}));
+      gMesh.position.copy(camera.position).addScaledVector(dir.normalize(),1.2);
+      scene.add(gMesh);
+      activeGrnadesRef.current.push({mesh:gMesh,vel,alive:true,timer:2.8,exploded:false});
+      flash("Grenade! 💣");
+    }
     function shoot(){
       if(!canShoot.current)return;
       if(ammoRef.current<=0){flash("No ammo! R to reload");return;}
+      const wcfg=WEAPON_CFG[weaponRef.current];
       canShoot.current=false;ammoRef.current-=1;setAmmo(ammoRef.current);showMuzzle();
-      setTimeout(()=>{canShoot.current=true;},190);
-      raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
-      const tgts=npcsRef.current.filter(n=>n.state!=="dead").map(n=>n.bodyMesh);
-      const hits=raycaster.intersectObjects(tgts,false);
-      if(!hits.length)return;
-      const npc=npcsRef.current.find(n=>n.state!=="dead"&&n.bodyMesh===hits[0].object);
-      if(!npc)return;
-      const dmg=28+Math.floor(Math.random()*24);npc.hp-=dmg;showHit();
-      const wp=npc.group.position.clone().add(new THREE.Vector3(0,1.6,0));
-      const pr=wp.clone().project(camera);
-      const newId=++dmgId.current;
-      setDmgNums(prev=>[...prev,{id:newId,x:(pr.x*0.5+0.5)*100,y:(1-(pr.y*0.5+0.5))*100,v:dmg}]);
-      setTimeout(()=>setDmgNums(prev=>prev.filter(d=>d.id!==newId)),800);
-      (npc.bodyMesh.material as THREE.MeshLambertMaterial).color.set(0xff2200);
-      setTimeout(()=>{if(npc.state!=="dead")(npc.bodyMesh.material as THREE.MeshLambertMaterial).color.set(npcShirt);},280);
-      if(npc.hp<=0){
-        npc.state="dead";npc.group.visible=false;
-        killsRef.current+=1;setKills(killsRef.current);
-        comboT.current=3.5;comboRef.current+=1;setCombo(comboRef.current);
-        flash(comboRef.current>=5?"RAMPAGE! 🔥":comboRef.current>=3?"MULTI-KILL! ⚡":"Enemy down! 💀");
-        spawnDrop(npc.group.position.clone());
-        setTimeout(()=>{
-          let rx=0,rz=0;
-          if(cfg.id==="hunza"){rx=(Math.random()-0.5)*160;rz=(Math.random()-0.5)*160;rx=Math.max(-80,Math.min(80,rx));}
-          else{const ra=Math.random()*Math.PI*2,rd=35+Math.random()*80;rx=Math.cos(ra)*rd;rz=Math.sin(ra)*rd;}
-          npc.group.position.set(rx,getH(rx,rz)+0.12,rz);
-          npc.waypoints=makeWaypoints(rx,rz);npc.wpIdx=0;npc.hp=npc.maxHp;
-          npc.state="patrol";npc.group.visible=true;
-          (npc.bodyMesh.material as THREE.MeshLambertMaterial).color.set(npcShirt);
-        },7000);
-      }else{npc.state="chase";npc.alertTimer=12;}
+      setTimeout(()=>{canShoot.current=true;},wcfg.rate);
+      for(let p=0;p<wcfg.pellets;p++){
+        const sx=(Math.random()-0.5)*wcfg.spread*2,sy=(Math.random()-0.5)*wcfg.spread*2;
+        raycaster.setFromCamera(new THREE.Vector2(sx,sy),camera);
+        const tgts=npcsRef.current.filter(n=>n.state!=="dead").map(n=>n.bodyMesh);
+        const hits=raycaster.intersectObjects(tgts,false);
+        if(!hits.length)continue;
+        const npc=npcsRef.current.find(n=>n.state!=="dead"&&n.bodyMesh===hits[0].object);
+        if(!npc)continue;
+        const headshot=hits[0].point.y>npc.group.position.y+1.5;
+        const dmg=Math.round(wcfg.dmg*(headshot?2.0:1)*(0.85+Math.random()*0.3));
+        npc.hp-=dmg;showHit();
+        const wp2=npc.group.position.clone().add(new THREE.Vector3(0,1.6,0));
+        const pr2=wp2.clone().project(camera);
+        const newId=++dmgId.current;
+        const label=headshot?`${dmg} 🎯`:String(dmg);
+        setDmgNums(prev=>[...prev,{id:newId,x:(pr2.x*0.5+0.5)*100,y:(1-(pr2.y*0.5+0.5))*100,v:headshot?dmg*10:dmg}]);
+        setTimeout(()=>setDmgNums(prev=>prev.filter(d=>d.id!==newId)),800);
+        (npc.bodyMesh.material as THREE.MeshLambertMaterial).color.set(0xff2200);
+        setTimeout(()=>{if(npc.state!=="dead")(npc.bodyMesh.material as THREE.MeshLambertMaterial).color.set(npcShirt);},280);
+        if(npc.hp<=0){
+          npc.state="dead";npc.group.visible=false;
+          killsRef.current+=1;setKills(killsRef.current);
+          comboT.current=3.5;comboRef.current+=1;setCombo(comboRef.current);
+          flash(comboRef.current>=5?"RAMPAGE! 🔥":comboRef.current>=3?"MULTI-KILL! ⚡":headshot?"HEADSHOT! 💀":"Enemy down! 💀");
+          spawnDrop(npc.group.position.clone());
+          setTimeout(()=>{
+            let rx=0,rz=0;
+            if(cfg.id==="hunza"){rx=(Math.random()-0.5)*160;rz=(Math.random()-0.5)*160;rx=Math.max(-80,Math.min(80,rx));}
+            else{const ra=Math.random()*Math.PI*2,rd=35+Math.random()*80;rx=Math.cos(ra)*rd;rz=Math.sin(ra)*rd;}
+            npc.group.position.set(rx,getH(rx,rz)+0.12,rz);
+            npc.waypoints=makeWaypoints(rx,rz);npc.wpIdx=0;npc.hp=npc.maxHp;
+            npc.state="patrol";npc.group.visible=true;
+            (npc.bodyMesh.material as THREE.MeshLambertMaterial).color.set(npcShirt);
+          },7000);
+        }else{npc.state="chase";npc.alertTimer=12;}
+        void label;
+      }
     }
 
     // ── Keyboard input (desktop) ───────────────────────────────────────────
     const onKeyDown=(e:KeyboardEvent)=>{
       keysRef.current[e.code]=true;
-      if(e.code==="KeyR"){ammoRef.current=30;setAmmo(30);flash("Reloaded ✓");}
       if(e.code==="KeyP"){const c:{[k:string]:"clear"|"rain"|"storm"}={clear:"rain",rain:"storm",storm:"clear"};
         const w=c[weatherRef.current];weatherRef.current=w;setWeather(w);rainMesh.visible=w!=="clear";flash(`Weather: ${w.toUpperCase()}`);}
       if(e.code==="KeyF"){
         const car=carRef.current;if(!car)return;
         if(inCarRef.current){inCarRef.current=false;setInCar(false);car.inUse=false;flash("Exited vehicle");}
         else if(camera.position.distanceTo(car.group.position)<4.5){inCarRef.current=true;setInCar(true);car.inUse=true;flash("Driving! WASD · F to exit");}
+      }
+      if(e.code==="KeyG")throwGrenade();
+      if(e.code==="Digit1"){weaponRef.current="pistol";setWeapon("pistol");ammoRef.current=Math.min(ammoRef.current,WEAPON_CFG.pistol.maxAmmo);setAmmo(ammoRef.current);flash("Pistol");}
+      if(e.code==="Digit2"){weaponRef.current="ak47";setWeapon("ak47");flash("AK-47");}
+      if(e.code==="Digit3"){weaponRef.current="shotgun";setWeapon("shotgun");ammoRef.current=Math.min(ammoRef.current,WEAPON_CFG.shotgun.maxAmmo);setAmmo(ammoRef.current);flash("Shotgun");}
+      if(e.code==="Digit4"){weaponRef.current="sniper";setWeapon("sniper");ammoRef.current=Math.min(ammoRef.current,WEAPON_CFG.sniper.maxAmmo);setAmmo(ammoRef.current);flash("Sniper");}
+      if(e.code==="KeyR"){
+        const maxA=WEAPON_CFG[weaponRef.current].maxAmmo;
+        ammoRef.current=maxA;setAmmo(maxA);flash(`Reloaded ${WEAPON_CFG[weaponRef.current].label} ✓`);
       }
     };
     const onKeyUp=(e:KeyboardEvent)=>{keysRef.current[e.code]=false;};
@@ -689,7 +787,7 @@ export default function World(){
     // ── Game loop ──────────────────────────────────────────────────────────
     const clock=new THREE.Clock();const playerBox=new THREE.Box3();
     let dayTime=0.28;let weatherTimer=40;let dmgTimer=0;let thunderTimer=0;
-    let waterTime=0;let animId:number;
+    let waterTime=0;let animId:number;let zoneDmgTimer=0;
 
     function animate(){
       animId=requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),0.05);
@@ -739,6 +837,99 @@ export default function World(){
           p.active=false;(p.mesh as THREE.Group).visible=false;p.respawnTimer=30;
           hpRef.current=Math.min(100,hpRef.current+35);setHp(hpRef.current);flash("+35 HP 💊");}
       }
+
+      // ── Safe zone shrink & damage ────────────────────────────────────────
+      zoneShrinkTimerRef.current-=dt;
+      if(zoneShrinkTimerRef.current<=0&&zoneRadiusRef.current>30){
+        zoneShrinkTimerRef.current=50;
+        zoneTargetRef.current=Math.max(30,zoneTargetRef.current-55);
+        flash("⚠️ Zone shrinking!");
+      }
+      if(zoneRadiusRef.current>zoneTargetRef.current){
+        zoneRadiusRef.current=Math.max(zoneTargetRef.current,zoneRadiusRef.current-8*dt);
+        setZoneRadius(Math.round(zoneRadiusRef.current));
+        (zoneRingGeo as THREE.TorusGeometry).dispose();
+        const newGeo=new THREE.TorusGeometry(zoneRadiusRef.current,1.5,8,80);
+        zoneRing.geometry=newGeo;
+        const wScale=zoneRadiusRef.current/260;
+        zoneWall.geometry=new THREE.CylinderGeometry(zoneRadiusRef.current,zoneRadiusRef.current,80,80,1,true);
+        void wScale;
+      }
+      const playerDist2D=Math.sqrt(camera.position.x*camera.position.x+camera.position.z*camera.position.z);
+      const isOutside=playerDist2D>zoneRadiusRef.current;
+      setOutsideZone(isOutside);
+      if(isOutside){zoneDmgTimer+=dt;if(zoneDmgTimer>=1.2){zoneDmgTimer=0;
+        const zoneDmg=2+Math.floor((playerDist2D-zoneRadiusRef.current)*0.08);
+        if(shieldRef.current>0){const absorbed=Math.min(shieldRef.current,zoneDmg);shieldRef.current=Math.max(0,shieldRef.current-absorbed);setShield(shieldRef.current);const rem=zoneDmg-absorbed;if(rem>0){hpRef.current=Math.max(0,hpRef.current-rem);setHp(hpRef.current);}}
+        else{hpRef.current=Math.max(0,hpRef.current-zoneDmg);setHp(hpRef.current);}
+      }}else{zoneDmgTimer=0;}
+
+      // ── Grenade physics ──────────────────────────────────────────────────
+      for(const g of activeGrnadesRef.current){
+        if(!g.alive)continue;
+        g.timer-=dt;
+        g.vel.y+=GRAVITY*dt*0.7;
+        g.mesh.position.addScaledVector(g.vel,dt);
+        const groundY=getH(g.mesh.position.x,g.mesh.position.z)+0.22;
+        if(g.mesh.position.y<groundY){g.mesh.position.y=groundY;g.vel.y*=-0.35;g.vel.x*=0.8;g.vel.z*=0.8;}
+        if(g.timer<=0&&!g.exploded){
+          g.exploded=true;g.alive=false;scene.remove(g.mesh);
+          setExplFlash(true);setTimeout(()=>setExplFlash(false),220);
+          const exPos=g.mesh.position.clone();
+          for(const npc of npcsRef.current){
+            if(npc.state==="dead")continue;
+            const d=npc.group.position.distanceTo(exPos);
+            if(d<9){const dmg=Math.round((9-d)/9*120*(0.8+Math.random()*0.4));npc.hp-=dmg;
+              if(npc.hp<=0){npc.state="dead";npc.group.visible=false;
+                killsRef.current+=1;setKills(killsRef.current);spawnDrop(npc.group.position.clone());}}
+          }
+          const selfD=camera.position.distanceTo(exPos);
+          if(selfD<9){const sd=Math.round((9-selfD)/9*55);hpRef.current=Math.max(0,hpRef.current-sd);setHp(hpRef.current);}
+          flash("💥 BOOM!");
+        }
+      }
+      activeGrnadesRef.current=activeGrnadesRef.current.filter(g=>g.alive||!g.exploded);
+
+      // ── Mobile grenade trigger ───────────────────────────────────────────
+      if(mGrenadeRef.current){mGrenadeRef.current=false;throwGrenade();}
+
+      // ── Weapon pickups ───────────────────────────────────────────────────
+      for(const p of weaponPickRef.current){
+        if(!p.active){p.respawnTimer-=dt;if(p.respawnTimer<=0){p.active=true;p.mesh.visible=true;}continue;}
+        p.mesh.rotation.y+=dt*1.4;p.mesh.position.y+=Math.sin(Date.now()*0.003)*0.0012;
+        if(camera.position.distanceTo(p.mesh.position)<2.4){
+          p.active=false;p.mesh.visible=false;p.respawnTimer=35;
+          weaponRef.current=p.type;setWeapon(p.type);
+          ammoRef.current=WEAPON_CFG[p.type].maxAmmo;setAmmo(ammoRef.current);
+          flash(`Picked up ${WEAPON_CFG[p.type].label}! [${p.type==="pistol"?"1":p.type==="ak47"?"2":p.type==="shotgun"?"3":"4"}]`);
+        }
+      }
+      // ── Armor pickups ────────────────────────────────────────────────────
+      for(const p of armorPickRef.current){
+        if(!p.active){p.respawnTimer-=dt;if(p.respawnTimer<=0){p.active=true;(p.mesh as THREE.Group).visible=true;}continue;}
+        p.mesh.rotation.y+=dt*1.0;
+        const aPos=(p.mesh as THREE.Group).position;
+        if(shieldRef.current<75&&camera.position.distanceTo(aPos)<2.8){
+          p.active=false;(p.mesh as THREE.Group).visible=false;p.respawnTimer=45;
+          shieldRef.current=Math.min(75,shieldRef.current+35);setShield(shieldRef.current);flash("+35 Armor 🛡");
+        }
+      }
+
+      // ── NPC health bars (project to screen) ─────────────────────────────
+      const bars:{id:number;x:number;y:number;hp:number;maxHp:number}[]=[];
+      for(const npc of npcsRef.current){
+        if(npc.state==="dead")continue;
+        const distToNpc=npc.group.position.distanceTo(camera.position);
+        if(distToNpc>28)continue;
+        const barPos=npc.group.position.clone().add(new THREE.Vector3(0,2.6,0));
+        const proj=barPos.project(camera);
+        if(proj.z<0||proj.z>1)continue;
+        bars.push({id:npc.id,x:(proj.x*0.5+0.5)*100,y:(1-(proj.y*0.5+0.5))*100,hp:npc.hp,maxHp:npc.maxHp});
+      }
+      setNpcBars(bars);
+
+      // ── Shield absorbs damage ────────────────────────────────────────────
+      // (NPC attack and zone damage already call setHp; we patch it via shield here - shield updates happen in pickup)
 
       // Combo
       if(comboT.current>0){comboT.current-=dt;if(comboT.current<=0){comboRef.current=0;setCombo(0);}}
@@ -828,7 +1019,10 @@ export default function World(){
         // NPC melee
         dmgTimer+=dt;if(dmgTimer>=2.5){dmgTimer=0;
           for(const npc of npcsRef.current){if(npc.state==="dead")continue;
-            if(npc.group.position.distanceTo(camera.position)<ATK_RANGE){hpRef.current=Math.max(0,hpRef.current-8);setHp(hpRef.current);}}}
+            if(npc.group.position.distanceTo(camera.position)<ATK_RANGE){
+              const rawDmg=8;
+              if(shieldRef.current>0){const abs=Math.min(shieldRef.current,rawDmg);shieldRef.current=Math.max(0,shieldRef.current-abs);setShield(shieldRef.current);const rem=rawDmg-abs;if(rem>0){hpRef.current=Math.max(0,hpRef.current-rem);setHp(hpRef.current);}}
+              else{hpRef.current=Math.max(0,hpRef.current-rawDmg);setHp(hpRef.current);}}}}
       }
 
       // NPC AI
@@ -886,7 +1080,8 @@ export default function World(){
         container.removeEventListener("touchmove",onTouchMove);container.removeEventListener("touchend",onTouchEnd);}
       controls.dispose();renderer.dispose();
       if(container.contains(renderer.domElement))container.removeChild(renderer.domElement);
-      npcsRef.current=[];ammoPickRef.current=[];hpPickRef.current=[];carRef.current=null;
+      npcsRef.current=[];ammoPickRef.current=[];hpPickRef.current=[];armorPickRef.current=[];
+      weaponPickRef.current=[];activeGrnadesRef.current=[];carRef.current=null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[selectedMap,flash,showHit,showMuzzle]);
@@ -950,6 +1145,12 @@ export default function World(){
       {/* Muzzle flash */}
       {muzzleFlash&&<div className="absolute inset-0 z-20 pointer-events-none" style={{background:"rgba(255,220,100,0.11)"}}/>}
 
+      {/* Explosion flash */}
+      {explFlash&&<div className="absolute inset-0 z-25 pointer-events-none" style={{background:"rgba(255,140,20,0.35)"}}/>}
+
+      {/* Zone outside warning */}
+      {outsideZone&&isActive&&hp>0&&<div className="absolute inset-0 z-10 pointer-events-none animate-pulse" style={{boxShadow:"inset 0 0 120px rgba(30,100,255,0.55)"}}/>}
+
       {/* ── Desktop lock overlay ─────────────────────────────────────────── */}
       {!isMobile&&!locked&&hp>0&&(
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/78 backdrop-blur-sm cursor-pointer"
@@ -962,7 +1163,8 @@ export default function World(){
               <p>WASD — Move</p><p>Mouse — Look</p>
               <p>Click — Shoot</p><p>R — Reload</p>
               <p>Shift — Sprint</p><p>Space — Jump</p>
-              <p>F — Car</p><p>P — Weather</p>
+              <p>F — Car</p><p>G — Grenade</p>
+              <p>1-4 — Weapons</p><p>P — Weather</p>
             </div>
             <button onClick={e=>{e.stopPropagation();setSelectedMap(null);}}
               className="px-4 py-2 bg-white/7 border border-white/10 rounded-lg text-white/40 font-display uppercase tracking-widest text-xs">← Change Map</button>
@@ -1010,8 +1212,19 @@ export default function World(){
 
       {/* Floating damage numbers */}
       {dmgNums.map(d=>(
-        <div key={d.id} className="absolute z-40 pointer-events-none font-display font-bold text-red-400 text-base drop-shadow"
-          style={{left:`${d.x}%`,top:`${d.y}%`,transform:"translate(-50%,-100%)"}}>-{d.v}</div>
+        <div key={d.id} className={`absolute z-40 pointer-events-none font-display font-bold drop-shadow text-base ${d.v>100?"text-yellow-300 text-xl":"text-red-400"}`}
+          style={{left:`${d.x}%`,top:`${d.y}%`,transform:"translate(-50%,-100%)"}}>-{d.v>100?`${d.v}💀`:d.v}</div>
+      ))}
+
+      {/* NPC floating health bars */}
+      {npcBars.map(b=>(
+        <div key={b.id} className="absolute z-30 pointer-events-none" style={{left:`${b.x}%`,top:`${b.y}%`,transform:"translate(-50%,-50%)"}}>
+          <div className="w-20 h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/20">
+            <div className="h-full rounded-full transition-all duration-100"
+              style={{width:`${(b.hp/b.maxHp)*100}%`,background:b.hp/b.maxHp>0.5?"#22c55e":b.hp/b.maxHp>0.25?"#eab308":"#ef4444"}}/>
+          </div>
+          <div className="text-center text-[8px] font-display text-white/60 mt-0.5">{b.hp}</div>
+        </div>
       ))}
 
       {/* ── HUD ─────────────────────────────────────────────────────────── */}
@@ -1021,6 +1234,9 @@ export default function World(){
           <div className="absolute top-3 left-3 z-20" style={{width:isMobile?120:148,height:isMobile?120:148}}>
             <div className="relative w-full h-full rounded-xl bg-black/70 border border-white/20 backdrop-blur-md overflow-hidden">
               <div className="absolute inset-0 opacity-10" style={{backgroundImage:"linear-gradient(rgba(255,255,255,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.18) 1px,transparent 1px)",backgroundSize:"18px 18px"}}/>
+              {/* Zone ring on minimap */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-blue-400/70 pointer-events-none z-5"
+                style={{width:`${Math.min(98,(zoneRadius/260)*98)}%`,height:`${Math.min(98,(zoneRadius/260)*98)}%`}}/>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-cyan-400 ring-2 ring-cyan-300/50 z-10"/>
               {hpPickRef.current.filter(p=>p.active).slice(0,6).map((p,i)=>{
                 const mp=(p.mesh as THREE.Group).position;const cx=50+mp.x/5;const cy=50+mp.z/5;
@@ -1036,11 +1252,15 @@ export default function World(){
             </div>
           </div>
 
-          {/* Top centre */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+          {/* Top centre — zone + weather */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1">
             <div className="px-2.5 py-1.5 rounded-lg bg-black/60 border border-white/10 backdrop-blur-md flex items-center gap-2">
               <span className="text-sm">{weatherIcon}</span>
               <span className={`font-display text-xs font-bold uppercase tracking-wider ${timeColor}`}>{timeLabel}</span>
+            </div>
+            <div className={`px-3 py-1 rounded-lg backdrop-blur-md font-display text-[10px] uppercase tracking-widest flex items-center gap-1.5 ${outsideZone?"bg-blue-500/30 border border-blue-400/70 text-blue-200 animate-pulse":"bg-black/55 border border-blue-400/25 text-blue-400/70"}`}>
+              <span>⬟</span><span>Zone {zoneRadius}m</span>
+              {outsideZone&&<span className="font-bold text-blue-100">— OUTSIDE!</span>}
             </div>
           </div>
 
@@ -1072,13 +1292,30 @@ export default function World(){
                 </div>
                 <span className="font-display text-[10px] tabular-nums text-white/40 w-6 text-right">{stamina}</span>
               </div>}
+              {shield>0&&<div className="flex items-center gap-2">
+                <span className="text-[9px] font-display uppercase tracking-widest text-blue-400 w-7">ARM</span>
+                <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-300" style={{width:`${(shield/75)*100}%`}}/>
+                </div>
+                <span className="font-display text-[10px] tabular-nums text-blue-300 w-6 text-right">{shield}</span>
+              </div>}
               <div className="flex items-center gap-2">
                 {inCar?(<><span className="text-sm">🚗</span><span className="font-display text-base font-bold text-sky-300">Driving</span></>):(<>
                   <span className="text-sm">🔫</span>
-                  <span className={`font-display text-xl font-bold tabular-nums ${ammo<=5?"text-red-400 animate-pulse":"text-amber-300"}`}>{ammo}</span>
-                  <span className="text-white/25 text-xs font-display">/30</span>
+                  <span className="font-display text-[10px] text-white/50 uppercase tracking-wider">{WEAPON_CFG[weapon].label}</span>
+                  <span className={`font-display text-xl font-bold tabular-nums ml-auto ${ammo<=5?"text-red-400 animate-pulse":"text-amber-300"}`}>{ammo}</span>
+                  <span className="text-white/25 text-xs font-display">/{WEAPON_CFG[weapon].maxAmmo}</span>
                 </>)}
               </div>
+              {!inCar&&<div className="flex items-center gap-2">
+                <span className="text-[9px] font-display uppercase tracking-widest text-green-400 w-7">GRN</span>
+                <div className="flex gap-1">
+                  {Array.from({length:Math.max(0,grenadeCount)}).map((_,i)=>(
+                    <div key={i} className="w-4 h-4 rounded-full bg-green-500/80 border border-green-400/70 text-center text-[8px] leading-4">💣</div>
+                  ))}
+                  {grenadeCount===0&&<span className="font-display text-[10px] text-white/30">None</span>}
+                </div>
+              </div>}
             </div>
           </div>
 
@@ -1117,7 +1354,15 @@ export default function World(){
 
           {/* Reload button */}
           <div className="landscape:flex hidden absolute bottom-8 right-32 z-30 w-14 h-14 rounded-full bg-amber-500/50 border-2 border-amber-400/70 items-center justify-center text-white font-bold text-sm cursor-pointer active:bg-amber-400/70 touch-none font-display tracking-widest"
-            onTouchStart={e=>{e.preventDefault();e.stopPropagation();ammoRef.current=30;setAmmo(30);flash("Reloaded ✓");}}>R</div>
+            onTouchStart={e=>{e.preventDefault();e.stopPropagation();const ma=WEAPON_CFG[weaponRef.current].maxAmmo;ammoRef.current=ma;setAmmo(ma);flash(`Reloaded ${WEAPON_CFG[weaponRef.current].label} ✓`);}}>R</div>
+
+          {/* Grenade button */}
+          <div className="landscape:flex hidden absolute z-30 w-16 h-16 rounded-full border-2 items-center justify-center text-xl cursor-pointer touch-none"
+            style={{bottom:"10rem",right:"7rem",background:grenadeCount>0?"rgba(34,197,94,0.5)":"rgba(100,100,100,0.3)",borderColor:grenadeCount>0?"rgba(134,239,172,0.7)":"rgba(150,150,150,0.4)"}}
+            onTouchStart={e=>{e.preventDefault();e.stopPropagation();mGrenadeRef.current=true;}}>
+            <span>💣</span>
+            {grenadeCount>0&&<span className="absolute top-0 right-0 w-5 h-5 bg-green-500 rounded-full text-[10px] font-display font-bold text-white flex items-center justify-center">{grenadeCount}</span>}
+          </div>
 
           {/* Car button */}
           <div className="landscape:flex hidden absolute bottom-26 right-32 z-30 w-14 h-14 rounded-full bg-cyan-500/50 border-2 border-cyan-400/70 items-center justify-center text-xl cursor-pointer active:bg-cyan-400/70 touch-none"
