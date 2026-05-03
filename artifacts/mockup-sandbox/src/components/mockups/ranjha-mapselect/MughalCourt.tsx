@@ -180,14 +180,15 @@ export function MughalCourt() {
                   </div>
                   
                   {/* Radio button style */}
-                  <div className={\`w-5 h-5 rounded-full border border-[#c9a84c] flex items-center justify-center transition-colors
-                    \${selectedMap === map.id ? 'bg-[#c9a84c]/20' : ''}
-                  \`}>
+                  <div
+                    className={`w-5 h-5 rounded-full border border-[#c9a84c] flex items-center justify-center transition-colors
+                    ${selectedMap === map.id ? 'bg-[#c9a84c]/20' : ''}`}
+                  >
                     {selectedMap === map.id && <div className="w-2.5 h-2.5 rounded-full bg-[#c9a84c]" />}
                   </div>
                 </div>
                 
-                  <p className="text-xs text-[#f5f0e0]/82 leading-relaxed font-serif mt-3 italic pr-4">
+                <p className="text-xs text-[#f5f0e0]/82 leading-relaxed font-serif mt-3 italic pr-4">
                   {map.desc}
                 </p>
               </div>
@@ -199,13 +200,13 @@ export function MughalCourt() {
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0a0818] via-[#0a0818] to-transparent pointer-events-none flex justify-center pb-8">
           <button 
             disabled={!selectedMap}
-            className={\`
+            className={`
               pointer-events-auto font-cinzel uppercase tracking-[0.28em] py-3 px-12 border border-[#c9a84c]
               transition-all duration-500 relative overflow-hidden group font-bold text-sm
-              \${selectedMap 
+              ${selectedMap 
                 ? 'text-[#0a0818] bg-[#c9a84c] hover:bg-[#d4b966] gold-glow shadow-[0_12px_38px_rgba(201,168,76,0.22)]' 
                 : 'text-[#c9a84c]/50 border-[#c9a84c]/30 bg-transparent'}
-            \`}
+            `}
           >
             {selectedMap && (
               <span className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />

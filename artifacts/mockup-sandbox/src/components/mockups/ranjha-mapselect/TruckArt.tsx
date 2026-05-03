@@ -184,7 +184,7 @@ export function TruckArt() {
               } as React.CSSProperties}
             >
                 <div 
-                className="p-1 relative z-10"
+                  className="p-1 relative z-10"
                 style={{ backgroundColor: map.bg }}
               >
                 <div className="border-4 border-dashed border-[rgba(255,255,255,0.28)] p-5 relative overflow-hidden rounded-2xl">
@@ -203,7 +203,7 @@ export function TruckArt() {
                       <div className="flex items-center gap-3">
                         <HeroCard mapId={map.id} />
                         <h3 className="text-3xl font-black uppercase text-white tracking-wider" style={{
-                        textShadow: `2px 2px 0 ${map.color}`
+                          textShadow: `2px 2px 0 ${map.color}`
                         }}>
                           {map.name}
                         </h3>
