@@ -590,10 +590,10 @@ export default function World(){
       canShoot.current=false;ammoRef.current-=1;setAmmo(ammoRef.current);showMuzzle();
       setTimeout(()=>{canShoot.current=true;},190);
       raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
-      const tgts=npcsRef.current.filter(n=>n.state!=="dead").flatMap(n=>n.group.children);
+      const tgts=npcsRef.current.filter(n=>n.state!=="dead").map(n=>n.bodyMesh);
       const hits=raycaster.intersectObjects(tgts,false);
       if(!hits.length)return;
-      const npc=npcsRef.current.find(n=>n.state!=="dead"&&n.group.children.includes(hits[0].object));
+      const npc=npcsRef.current.find(n=>n.state!=="dead"&&n.bodyMesh===hits[0].object);
       if(!npc)return;
       const dmg=28+Math.floor(Math.random()*24);npc.hp-=dmg;showHit();
       const wp=npc.group.position.clone().add(new THREE.Vector3(0,1.6,0));
