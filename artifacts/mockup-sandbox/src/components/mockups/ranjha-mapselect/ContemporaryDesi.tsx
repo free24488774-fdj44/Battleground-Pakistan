@@ -39,6 +39,36 @@ export function ContemporaryDesi() {
     },
   ];
 
+  const heroLooks: Record<string, { skin: string; cloth: string; pants: string; hair: string; accent: string; weapon: string }> = {
+    hunza: { skin: "#d8b08c", cloth: "#3b82f6", pants: "#1e293b", hair: "#111827", accent: "#93c5fd", weapon: "🎯" },
+    lahore: { skin: "#d9b08a", cloth: "#ef4444", pants: "#2a1a1a", hair: "#130b0b", accent: "#fca5a5", weapon: "🗡" },
+    multan: { skin: "#d5a57a", cloth: "#eab308", pants: "#5b3a16", hair: "#3b2410", accent: "#fde68a", weapon: "🏹" },
+    karachi: { skin: "#d3a57f", cloth: "#14b8a6", pants: "#0f172a", hair: "#101420", accent: "#5eead4", weapon: "🔫" },
+  };
+
+  function HeroCard({ mapId }: { mapId: string }) {
+    const h = heroLooks[mapId];
+    return (
+      <div className="relative h-20 w-16 shrink-0">
+        <div className="absolute inset-x-1 bottom-0 h-2 rounded-full bg-black/30 blur-sm" />
+        <div className="absolute left-1/2 top-1 -translate-x-1/2">
+          <div className="relative">
+            <div className="w-5 h-5 rounded-full" style={{ background: h.skin }} />
+            <div className="absolute -top-1 -left-1 w-7 h-4 rounded-t-full" style={{ background: h.hair }} />
+          </div>
+        </div>
+        <div className="absolute left-1/2 top-6 -translate-x-1/2 w-7 h-8 rounded-md" style={{ background: h.cloth }} />
+        <div className="absolute left-[18px] top-7 w-1.5 h-7 rounded-full rotate-[18deg]" style={{ background: h.skin }} />
+        <div className="absolute right-[18px] top-7 w-1.5 h-7 rounded-full -rotate-[18deg]" style={{ background: h.skin }} />
+        <div className="absolute left-[18px] top-12 w-1.5 h-7 rounded-full rotate-[4deg]" style={{ background: h.pants }} />
+        <div className="absolute right-[18px] top-12 w-1.5 h-7 rounded-full -rotate-[4deg]" style={{ background: h.pants }} />
+        <div className="absolute right-0 top-8 text-[18px]" style={{ filter: `drop-shadow(0 0 8px ${h.accent})` }}>
+          {h.weapon}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="w-full h-[100dvh] flex justify-center bg-black overflow-hidden relative font-sans"
@@ -140,9 +170,12 @@ export function ContemporaryDesi() {
 
                 <div className="p-5 pl-6 flex flex-col gap-3">
                   <div className="flex justify-between items-start">
-                    <h3 className="text-xl font-bold text-white tracking-[0.16em]">
-                      {map.name}
-                    </h3>
+                    <div className="flex items-center gap-3">
+                      <HeroCard mapId={map.id} />
+                      <h3 className="text-xl font-bold text-white tracking-[0.16em]">
+                        {map.name}
+                      </h3>
+                    </div>
                     <span 
                       className="text-xs px-2 py-1 uppercase font-bold tracking-wider text-[#040f06]"
                       style={{ backgroundColor: map.accent }}

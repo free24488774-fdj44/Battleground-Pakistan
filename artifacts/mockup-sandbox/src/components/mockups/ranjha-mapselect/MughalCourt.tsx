@@ -32,6 +32,36 @@ const maps = [
   },
 ];
 
+const heroLooks: Record<string, { skin: string; cloth: string; pants: string; hair: string; accent: string; weapon: string }> = {
+  hunza: { skin: "#d8b08c", cloth: "#8f5b3d", pants: "#43312a", hair: "#2a1a12", accent: "#c9a84c", weapon: "🪓" },
+  lahore: { skin: "#d9b08a", cloth: "#8b1a1a", pants: "#2a1a1a", hair: "#130b0b", accent: "#ffcf5a", weapon: "🗡" },
+  multan: { skin: "#d5a57a", cloth: "#c98a2f", pants: "#5b3a16", hair: "#3b2410", accent: "#f5d27a", weapon: "🏹" },
+  karachi: { skin: "#d3a57f", cloth: "#1e4f7a", pants: "#1b2430", hair: "#101420", accent: "#66d9ff", weapon: "🔫" },
+};
+
+function HeroCard({ mapId }: { mapId: string }) {
+  const h = heroLooks[mapId];
+  return (
+    <div className="relative h-20 w-16 shrink-0">
+      <div className="absolute inset-x-1 bottom-0 h-2 rounded-full bg-black/30 blur-sm" />
+      <div className="absolute left-1/2 top-1 -translate-x-1/2">
+        <div className="relative">
+          <div className="w-5 h-5 rounded-full" style={{ background: h.skin }} />
+          <div className="absolute -top-1 -left-1 w-7 h-4 rounded-t-full" style={{ background: h.hair }} />
+        </div>
+      </div>
+      <div className="absolute left-1/2 top-6 -translate-x-1/2 w-7 h-8 rounded-md" style={{ background: h.cloth }} />
+      <div className="absolute left-[18px] top-7 w-1.5 h-7 rounded-full rotate-[18deg]" style={{ background: h.skin }} />
+      <div className="absolute right-[18px] top-7 w-1.5 h-7 rounded-full -rotate-[18deg]" style={{ background: h.skin }} />
+      <div className="absolute left-[18px] top-12 w-1.5 h-7 rounded-full rotate-[4deg]" style={{ background: h.pants }} />
+      <div className="absolute right-[18px] top-12 w-1.5 h-7 rounded-full -rotate-[4deg]" style={{ background: h.pants }} />
+      <div className="absolute right-0 top-8 text-[18px]" style={{ filter: `drop-shadow(0 0 8px ${h.accent})` }}>
+        {h.weapon}
+      </div>
+    </div>
+  );
+}
+
 export function MughalCourt() {
   const [selectedMap, setSelectedMap] = useState<string | null>(null);
 
@@ -133,8 +163,9 @@ export function MughalCourt() {
               )}
               
               <div className="p-4 relative z-10">
-                <div className="flex justify-between items-start mb-2">
+                  <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-3">
+                    <HeroCard mapId={map.id} />
                     <span className="text-2xl opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-md">
                       {map.icon}
                     </span>

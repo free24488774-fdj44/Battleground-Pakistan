@@ -40,6 +40,36 @@ const maps = [
   }
 ];
 
+const heroLooks: Record<string, { skin: string; cloth: string; pants: string; hair: string; accent: string; weapon: string }> = {
+  hunza: { skin: "#d8b08c", cloth: "#00e5ff", pants: "#163244", hair: "#111827", accent: "#00e5ff", weapon: "🎯" },
+  lahore: { skin: "#d9b08a", cloth: "#ff006e", pants: "#1f1f1f", hair: "#140507", accent: "#ffd700", weapon: "🗡" },
+  multan: { skin: "#d5a57a", cloth: "#ffd700", pants: "#5b3a16", hair: "#3b2410", accent: "#ff4500", weapon: "🏹" },
+  karachi: { skin: "#d3a57f", cloth: "#00aa55", pants: "#14241c", hair: "#0f172a", accent: "#00e5ff", weapon: "🔫" },
+};
+
+function HeroCard({ mapId }: { mapId: string }) {
+  const h = heroLooks[mapId];
+  return (
+    <div className="relative h-20 w-16 shrink-0">
+      <div className="absolute inset-x-1 bottom-0 h-2 rounded-full bg-black/30 blur-sm" />
+      <div className="absolute left-1/2 top-1 -translate-x-1/2">
+        <div className="relative">
+          <div className="w-5 h-5 rounded-full" style={{ background: h.skin }} />
+          <div className="absolute -top-1 -left-1 w-7 h-4 rounded-t-full" style={{ background: h.hair }} />
+        </div>
+      </div>
+      <div className="absolute left-1/2 top-6 -translate-x-1/2 w-7 h-8 rounded-md" style={{ background: h.cloth }} />
+      <div className="absolute left-[18px] top-7 w-1.5 h-7 rounded-full rotate-[18deg]" style={{ background: h.skin }} />
+      <div className="absolute right-[18px] top-7 w-1.5 h-7 rounded-full -rotate-[18deg]" style={{ background: h.skin }} />
+      <div className="absolute left-[18px] top-12 w-1.5 h-7 rounded-full rotate-[4deg]" style={{ background: h.pants }} />
+      <div className="absolute right-[18px] top-12 w-1.5 h-7 rounded-full -rotate-[4deg]" style={{ background: h.pants }} />
+      <div className="absolute right-0 top-8 text-[18px]" style={{ filter: `drop-shadow(0 0 8px ${h.accent})` }}>
+        {h.weapon}
+      </div>
+    </div>
+  );
+}
+
 export function TruckArt() {
   const [selectedMap, setSelectedMap] = useState<string | null>(null);
 
@@ -170,11 +200,14 @@ export function TruckArt() {
 
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-3xl font-black uppercase text-white tracking-wider" style={{
+                      <div className="flex items-center gap-3">
+                        <HeroCard mapId={map.id} />
+                        <h3 className="text-3xl font-black uppercase text-white tracking-wider" style={{
                         textShadow: `2px 2px 0 ${map.color}`
-                      }}>
-                        {map.name}
-                      </h3>
+                        }}>
+                          {map.name}
+                        </h3>
+                      </div>
                       <div className="px-3 py-1 bg-black text-white font-bold border-2 text-sm whitespace-nowrap" style={{ borderColor: map.accent }}>
                         {map.biome}
                       </div>
