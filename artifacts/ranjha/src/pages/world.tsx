@@ -1104,16 +1104,25 @@ export default function World(){
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {MAPS.map(m=>(
             <button key={m.id} onClick={()=>setSelectedMap(m)}
-              className="group relative p-4 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 hover:border-amber-500/50 text-left transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="flex items-start gap-3">
-                <div className="text-3xl mt-0.5">{m.emoji}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-display text-lg font-bold text-white uppercase tracking-wider mb-0.5">{m.name}</div>
-                  <div className="text-white/40 text-xs leading-relaxed">{m.desc}</div>
-                  <div className="flex gap-1 mt-2 flex-wrap">
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-display uppercase tracking-wider bg-amber-500/12 border border-amber-500/25 text-amber-400">{m.biome}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-display uppercase tracking-wider bg-blue-500/12 border border-blue-500/25 text-blue-300">{isMobile?"Touch Controls":"Car • Loot • AI"}</span>
-                  </div>
+              className="group relative rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 hover:border-amber-500/50 text-left transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden">
+              {/* AI-generated map preview image */}
+              <div className="relative w-full h-32 overflow-hidden">
+                <img
+                  src={`/map-${m.id}.png`}
+                  alt={m.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"/>
+                <div className="absolute bottom-2 left-3 text-2xl drop-shadow-lg">{m.emoji}</div>
+                <div className="absolute bottom-2 right-3">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-display uppercase tracking-wider bg-amber-500/80 text-black font-bold">{m.biome}</span>
+                </div>
+              </div>
+              <div className="p-3">
+                <div className="font-display text-base font-bold text-white uppercase tracking-wider mb-0.5">{m.name}</div>
+                <div className="text-white/40 text-xs leading-relaxed">{m.desc}</div>
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-display uppercase tracking-wider bg-blue-500/12 border border-blue-500/25 text-blue-300">{isMobile?"Touch Controls":"Car • Loot • AI"}</span>
                 </div>
               </div>
             </button>

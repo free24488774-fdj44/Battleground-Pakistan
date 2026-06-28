@@ -168,6 +168,27 @@ export function ContemporaryDesi() {
                   style={{ backgroundColor: map.accent }}
                 />
 
+                {/* AI-generated map preview */}
+                <div className="relative w-full h-28 overflow-hidden">
+                  <img
+                    src={`/map-${map.id}.png`}
+                    alt={map.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117]/90 via-[#0d1117]/10 to-transparent"/>
+                  <div
+                    className="absolute top-0 left-0 bottom-0 w-1.5"
+                    style={{ backgroundColor: map.accent }}
+                  />
+                  <div className="absolute top-2 right-3">
+                    <span
+                      className="text-[10px] px-2 py-0.5 uppercase font-bold tracking-wider text-[#040f06]"
+                      style={{ backgroundColor: map.accent }}
+                    >
+                      {map.biome}
+                    </span>
+                  </div>
+                </div>
                 <div className="p-5 pl-6 flex flex-col gap-3">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">

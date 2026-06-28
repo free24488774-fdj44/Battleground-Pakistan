@@ -198,6 +198,18 @@ export function TruckArt() {
                   {/* Motif background */}
                   <div className="absolute -right-16 -top-16 w-48 h-48 sun-motif opacity-30 blur-[0.2px]"></div>
 
+                  {/* AI map preview */}
+                  <div className="relative w-full h-28 overflow-hidden rounded-lg mb-4 -mx-1">
+                    <img
+                      src={`/map-${map.id}.png`}
+                      alt={map.name}
+                      className="w-full h-full object-cover"
+                      style={{ filter: `saturate(1.5) contrast(1.1)` }}
+                    />
+                    <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${map.bg}ee, transparent 60%)` }}/>
+                    <div className="absolute bottom-2 left-2 text-xl drop-shadow-lg">{map.biome}</div>
+                  </div>
+
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-3">

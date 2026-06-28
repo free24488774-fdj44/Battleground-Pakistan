@@ -162,6 +162,16 @@ export function MughalCourt() {
                 <div className="absolute inset-0 bg-gradient-to-r from-[#c9a84c]/10 to-transparent pointer-events-none" />
               )}
               
+              {/* AI-generated terrain preview */}
+              <div className="relative w-full h-28 overflow-hidden">
+                <img
+                  src={`/map-${map.id}.png`}
+                  alt={map.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#120910]/95 via-[#120910]/30 to-transparent"/>
+                <div className="absolute top-2 right-2 text-[10px] font-cinzel uppercase tracking-[0.22em] text-[#c9a84c] bg-black/60 px-2 py-0.5 border border-[#c9a84c]/30">{map.biome}</div>
+              </div>
               <div className="p-4 relative z-10">
                   <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-3">

@@ -120,3 +120,27 @@ id = "h235ZngrYNwVtNCowe9Di"
 uri = "file://artifacts/ranjha/src/assets/images/characters/face-10.png"
 type = "image"
 title = "generated_image"
+
+[[generated]]
+id = "vxk2Tg0iDWzU3pgMbWaJV"
+uri = "file://artifacts/ranjha/public/map-hunza.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "PvQCR46JroIdE6nClOsNe"
+uri = "file://artifacts/ranjha/public/map-lahore.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "FLKAJ9219XmVvM-nxvXUF"
+uri = "file://artifacts/ranjha/public/map-multan.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "DvBFotVgZBgNtS8sP8miK"
+uri = "file://artifacts/ranjha/public/map-karachi.png"
+type = "image"
+title = "generated_image"
