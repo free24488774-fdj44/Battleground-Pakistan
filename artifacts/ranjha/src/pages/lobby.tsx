@@ -356,21 +356,15 @@ export default function Lobby() {
         ))}
       </div>
 
-      {/* Bottom Right Play Buttons */}
+      {/* Bottom Right Play Button — seedha ghar (home) ke andar 3D world mein */}
       <div className="absolute bottom-6 right-6 z-30 flex items-end gap-3">
-        <button
+        <NeonButton
+          size="xl"
           onClick={() => setLocation("/world")}
-          className="px-5 py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 font-display font-bold uppercase tracking-widest text-sm flex items-center gap-2 transition-all hover:scale-105"
-        >
-          🌍 3D World
-        </button>
-        <NeonButton 
-          size="xl" 
-          onClick={() => setLocation("/matchmaking")}
           className="animate-[pulse_2s_ease-in-out_infinite]"
         >
           <Play className="w-8 h-8 fill-current" />
-          BATTLE
+          START
         </NeonButton>
       </div>
     </div>

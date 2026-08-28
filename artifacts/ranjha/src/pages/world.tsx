@@ -228,8 +228,12 @@ export default function World(){
 
     const farPlane=cfg.id==="hunza"?2000:900;
     const camera=new THREE.PerspectiveCamera(72,container.clientWidth/container.clientHeight,0.2,farPlane);
-    if(cfg.id==="hunza")camera.position.set(0,getH_hunza(0,30)+3,30);
-    else camera.position.set(0,5,0);
+
+    // ── Home spawn point (per map) — player match shuru hotay hi ghar ke andar spawn hota hai ──
+    const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85]};
+    const [csx,csz]=carSpawns[cfg.id]||[20,-20];
+    const homeCX=csx,homeCZ=csz-5; // home center thora peeche, darwaza car ki taraf (+z) khulta hai
+    camera.position.set(homeCX,getH(homeCX,homeCZ)+1.9,homeCZ-2.3); // andar, darwaze ki taraf mun karke
 
     const controls=new PointerLockControls(camera,renderer.domElement);
     if(!isMobileLocal){
@@ -335,6 +339,51 @@ export default function World(){
     }else{
       [[0,0,50,30],[50,30,80,60],[0,0,-30,-40],[-30,-40,-60,-65],[0,0,30,-50],[0,0,-25,45],
        [50,30,20,70],[-30,-40,-70,-10],[0,0,80,-20],[0,0,-60,40]].forEach(([x1,z1,x2,z2])=>mkRoad(x1,z1,x2,z2));
+    }
+
+    // ── Player's Home (spawn point per map, region-style hut/house) ─────────
+    {
+      const HOME_STYLE:{[k:string]:{wall:number;roof:number;door:number}}={
+        hunza:{wall:0xb8a888,roof:0xa09070,door:0x4a3520},
+        lahore:{wall:0xaa3322,roof:0x6b3320,door:0x5a3018},
+        multan:{wall:0xd4a84b,roof:0xb08030,door:0x5a3a1a},
+        karachi:{wall:0xe0d8c8,roof:0x8899aa,door:0x40342a},
+      };
+      const hs=HOME_STYLE[cfg.id]||HOME_STYLE.lahore;
+      const wallM=new THREE.MeshLambertMaterial({color:hs.wall});
+      const roofM=new THREE.MeshLambertMaterial({color:hs.roof});
+      const doorM=new THREE.MeshLambertMaterial({color:hs.door});
+      const hy=getH(homeCX,homeCZ);
+      const HW=4.2,HD=4.2,HH=2.6; // home width/depth/height
+      // Back + side walls (solid)
+      const backWall=new THREE.Mesh(new THREE.BoxGeometry(HW,HH,0.25),wallM);
+      backWall.position.set(homeCX,hy+HH/2,homeCZ-HD/2);scene.add(backWall);
+      const leftWall=new THREE.Mesh(new THREE.BoxGeometry(0.25,HH,HD),wallM);
+      leftWall.position.set(homeCX-HW/2,hy+HH/2,homeCZ);scene.add(leftWall);
+      const rightWall=leftWall.clone();rightWall.position.set(homeCX+HW/2,hy+HH/2,homeCZ);scene.add(rightWall);
+      // Front wall with door gap (2 segments, gap in middle facing car spawn +z)
+      const frontSegW=(HW-1.6)/2;
+      const frontL=new THREE.Mesh(new THREE.BoxGeometry(frontSegW,HH,0.25),wallM);
+      frontL.position.set(homeCX-HW/2+frontSegW/2,hy+HH/2,homeCZ+HD/2);scene.add(frontL);
+      const frontR=frontL.clone();frontR.position.set(homeCX+HW/2-frontSegW/2,hy+HH/2,homeCZ+HD/2);scene.add(frontR);
+      // Door lintel (bar above the doorway gap)
+      const lintel=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.4,0.25),doorM);
+      lintel.position.set(homeCX,hy+HH-0.2,homeCZ+HD/2);scene.add(lintel);
+      // Roof
+      const roof=new THREE.Mesh(new THREE.BoxGeometry(HW+0.6,0.35,HD+0.6),roofM);
+      roof.position.set(homeCX,hy+HH+0.18,homeCZ);scene.add(roof);
+      // Floor
+      const floor=new THREE.Mesh(new THREE.BoxGeometry(HW,0.1,HD),new THREE.MeshLambertMaterial({color:hs.wall}));
+      floor.position.set(homeCX,hy+0.05,homeCZ);scene.add(floor);
+      // Simple bed/charpai inside as a landmark
+      const bed=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.32,0.8),new THREE.MeshLambertMaterial({color:0x6b4a2a}));
+      bed.position.set(homeCX-HW/2+1.1,hy+0.16,homeCZ-HD/2+0.7);scene.add(bed);
+      // Register walls as solid collision so player can't walk through them (door stays open)
+      bldBoxes.push(new THREE.Box3().setFromObject(backWall));
+      bldBoxes.push(new THREE.Box3().setFromObject(leftWall));
+      bldBoxes.push(new THREE.Box3().setFromObject(rightWall));
+      bldBoxes.push(new THREE.Box3().setFromObject(frontL));
+      bldBoxes.push(new THREE.Box3().setFromObject(frontR));
     }
 
     // ── Humanoid person builder ────────────────────────────────────────────
@@ -549,9 +598,7 @@ export default function World(){
     });
 
     // ── Car ────────────────────────────────────────────────────────────────
-    const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85]};
-    const [csx,csz]=carSpawns[cfg.id]||[20,-20];
-    const carY=getH(csx,csz);
+    const carY=getH(csx,csz); // csx,csz already defined above (home door-front point)
     const carBodyM=new THREE.MeshStandardMaterial({color:cfg.id==="multan"?0xa56a2a:cfg.id==="karachi"?0x214d8f:0x4a5664,roughness:0.55,metalness:0.25});
     const carGlassM=new THREE.MeshStandardMaterial({color:0x91b6d8,transparent:true,opacity:0.55,roughness:0.12,metalness:0.08});
     const wheelM2=new THREE.MeshLambertMaterial({color:0x222222});
