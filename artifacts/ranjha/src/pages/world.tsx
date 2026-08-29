@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import * as THREE from "three";
 import { createNoise2D } from "simplex-noise";
+import { useGame } from "@/contexts/GameContext";
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  PointerLockControls (desktop)
@@ -109,6 +110,7 @@ const DET_RANGE=32;const ATK_RANGE=5;const BASE_SPD=11;const SPRINT_M=2.1;
 export default function World(){
   const mountRef=useRef<HTMLDivElement>(null);
   const [,setLocation]=useLocation();
+  const { selectedPet } = useGame();
 
   // Mobile detection (stable, computed once)
   const isMobile=typeof window!=="undefined"&&('ontouchstart' in window||navigator.maxTouchPoints>1);
@@ -218,7 +220,12 @@ export default function World(){
     const renderer=new THREE.WebGLRenderer({antialias:!isMobileLocal,powerPreference:"high-performance"});
     renderer.setSize(container.clientWidth,container.clientHeight);
     renderer.shadowMap.enabled=!isMobileLocal; // shadows off on mobile for perf
+    renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,isMobileLocal?1.2:1.5));
+    // Cinematic tone mapping — behtar contrast/colors, professional look ke liye
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure=1.05;
+    renderer.outputColorSpace=THREE.SRGBColorSpace;
     container.appendChild(renderer.domElement);
 
     const scene=new THREE.Scene();
@@ -244,15 +251,15 @@ export default function World(){
     }
 
     // ── Lighting ──────────────────────────────────────────────────────────
-    const hemi=new THREE.HemisphereLight(cfg.ambientHex,cfg.groundHex,0.55);scene.add(hemi);
-    const ambient=new THREE.AmbientLight(0xffffff,0.4);scene.add(ambient);
-    const sun=new THREE.DirectionalLight(cfg.sunColor,1.4);
-    if(!isMobileLocal){sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+    const hemi=new THREE.HemisphereLight(cfg.ambientHex,cfg.groundHex,0.65);scene.add(hemi);
+    const ambient=new THREE.AmbientLight(0xffffff,0.35);scene.add(ambient);
+    const sun=new THREE.DirectionalLight(cfg.sunColor,2.2);
+    if(!isMobileLocal){sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-0.0005;
       const sf=cfg.id==="hunza"?350:200;
       sun.shadow.camera.left=-sf;sun.shadow.camera.right=sf;
       sun.shadow.camera.top=sf;sun.shadow.camera.bottom=-sf;sun.shadow.camera.far=800;}
     scene.add(sun);
-    const fill=new THREE.DirectionalLight(0x4466aa,0.3);fill.position.set(-150,80,-100);scene.add(fill);
+    const fill=new THREE.DirectionalLight(0x6a88bb,0.35);fill.position.set(-150,80,-100);scene.add(fill);
     const moon=new THREE.DirectionalLight(0x223355,0);moon.position.set(-100,120,-80);scene.add(moon);
 
     // ── Per-map height functions ───────────────────────────────────────────
@@ -303,7 +310,7 @@ export default function World(){
       vcols[i*3]=col.r;vcols[i*3+1]=col.g;vcols[i*3+2]=col.b;
     }
     tGeo.setAttribute("color",new THREE.BufferAttribute(vcols,3));tGeo.computeVertexNormals();
-    const terrain=new THREE.Mesh(tGeo,new THREE.MeshLambertMaterial({vertexColors:true}));
+    const terrain=new THREE.Mesh(tGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95,metalness:0.02}));
     if(!isMobileLocal)terrain.receiveShadow=true;scene.add(terrain);
 
     // ── Water ─────────────────────────────────────────────────────────────
@@ -384,6 +391,152 @@ export default function World(){
       bldBoxes.push(new THREE.Box3().setFromObject(rightWall));
       bldBoxes.push(new THREE.Box3().setFromObject(frontL));
       bldBoxes.push(new THREE.Box3().setFromObject(frontR));
+    }
+
+    // ── Pet companion (3D animal model, follows player) ─────────────────────
+    type PetKind="bird"|"quad"|"reptile";
+    interface PetVisualCfg{kind:PetKind;scale:number;bodyColor:number;secondaryColor:number;
+      earType?:"round"|"long"|"pointed"|"none";tailType?:"bushy"|"thin"|"short"|"trunk"|"none";
+      hasMane?:boolean;hasHorn?:boolean;pattern?:"stripes"|"spots"|"none";glow?:boolean;}
+    const PET_VISUALS:{[name:string]:PetVisualCfg}={
+      "Squirrel":{kind:"quad",scale:0.45,bodyColor:0xa56a3a,secondaryColor:0xd8b98a,earType:"round",tailType:"bushy"},
+      "Rabbit":{kind:"quad",scale:0.5,bodyColor:0xe8e2d5,secondaryColor:0xffffff,earType:"long",tailType:"short"},
+      "Monkey":{kind:"quad",scale:0.6,bodyColor:0x7a5230,secondaryColor:0xd8b98a,earType:"round",tailType:"thin"},
+      "Hawk":{kind:"bird",scale:0.55,bodyColor:0x6b4426,secondaryColor:0xd8c8a0},
+      "Wolf":{kind:"quad",scale:0.85,bodyColor:0x9098a0,secondaryColor:0xe8e8e8,earType:"pointed",tailType:"bushy"},
+      "Elephant":{kind:"quad",scale:1.6,bodyColor:0x8a8a8a,secondaryColor:0xb0b0b0,earType:"round",tailType:"trunk"},
+      "Panther":{kind:"quad",scale:0.85,bodyColor:0x0d0d10,secondaryColor:0x1a1a1e,earType:"pointed",tailType:"bushy"},
+      "Falcon":{kind:"bird",scale:0.5,bodyColor:0x556270,secondaryColor:0xdedede},
+      "Bear":{kind:"quad",scale:1.3,bodyColor:0x4a3524,secondaryColor:0x6a4f38,earType:"round",tailType:"short"},
+      "Lion":{kind:"quad",scale:1.2,bodyColor:0xc79a4b,secondaryColor:0x8a5a20,earType:"round",tailType:"bushy",hasMane:true},
+      "Tiger":{kind:"quad",scale:1.2,bodyColor:0xe08a2e,secondaryColor:0x1a1a1a,earType:"round",tailType:"bushy",pattern:"stripes"},
+      "Snow Leopard":{kind:"quad",scale:1.0,bodyColor:0xe6e6e0,secondaryColor:0x888880,earType:"round",tailType:"bushy",pattern:"spots"},
+      "Rhino":{kind:"quad",scale:1.5,bodyColor:0x7a7a70,secondaryColor:0x5a5a50,earType:"round",tailType:"short",hasHorn:true},
+      "Komodo":{kind:"reptile",scale:1.0,bodyColor:0x5a6a48,secondaryColor:0x3a4530},
+      "Phoenix":{kind:"bird",scale:0.65,bodyColor:0xff6a1a,secondaryColor:0xffcc33,glow:true},
+    };
+    function hexToCss(h:number){return "#"+h.toString(16).padStart(6,"0");}
+    function makeStripeTexture(base:number,stripe:number):THREE.CanvasTexture{
+      const c=document.createElement("canvas");c.width=64;c.height=64;
+      const ctx=c.getContext("2d")!;ctx.fillStyle=hexToCss(base);ctx.fillRect(0,0,64,64);
+      ctx.strokeStyle=hexToCss(stripe);ctx.lineWidth=6;
+      for(let i=-2;i<10;i++){ctx.beginPath();ctx.moveTo(i*10,0);ctx.lineTo(i*10-30,64);ctx.stroke();}
+      const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,1);return tex;
+    }
+    function makeSpotTexture(base:number,spot:number):THREE.CanvasTexture{
+      const c=document.createElement("canvas");c.width=64;c.height=64;
+      const ctx=c.getContext("2d")!;ctx.fillStyle=hexToCss(base);ctx.fillRect(0,0,64,64);
+      ctx.fillStyle=hexToCss(spot);
+      for(let i=0;i<14;i++){const x=Math.random()*64,y=Math.random()*64,r=2+Math.random()*3;
+        ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+      const tex=new THREE.CanvasTexture(c);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(2,2);return tex;
+    }
+    function mkQuadruped(cfg:PetVisualCfg):THREE.Group{
+      const g=new THREE.Group();
+      let bodyMat:THREE.Material;
+      if(cfg.pattern==="stripes")bodyMat=new THREE.MeshLambertMaterial({map:makeStripeTexture(cfg.bodyColor,cfg.secondaryColor)});
+      else if(cfg.pattern==="spots")bodyMat=new THREE.MeshLambertMaterial({map:makeSpotTexture(cfg.bodyColor,cfg.secondaryColor)});
+      else bodyMat=new THREE.MeshLambertMaterial({color:cfg.bodyColor});
+      const darkMat=new THREE.MeshLambertMaterial({color:cfg.secondaryColor});
+      const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.16,0.32,4,8),bodyMat);
+      body.rotation.z=Math.PI/2;body.position.y=0.22;g.add(body);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.14,8,6),bodyMat);
+      head.position.set(0.28,0.30,0);g.add(head);
+      const snout=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.14,6),darkMat);
+      snout.rotation.z=-Math.PI/2;snout.position.set(0.40,0.27,0);g.add(snout);
+      if(cfg.earType==="round"){
+        const eg=new THREE.SphereGeometry(0.05,6,4);
+        const l=new THREE.Mesh(eg,darkMat);l.position.set(0.26,0.40,0.09);g.add(l);
+        const r=l.clone();r.position.z=-0.09;g.add(r);
+      }else if(cfg.earType==="long"){
+        const eg=new THREE.CapsuleGeometry(0.02,0.18,2,4);
+        const l=new THREE.Mesh(eg,darkMat);l.position.set(0.26,0.48,0.05);l.rotation.x=0.2;g.add(l);
+        const r=l.clone();r.position.z=-0.05;g.add(r);
+      }else if(cfg.earType==="pointed"){
+        const eg=new THREE.ConeGeometry(0.045,0.1,5);
+        const l=new THREE.Mesh(eg,darkMat);l.position.set(0.26,0.42,0.08);g.add(l);
+        const r=l.clone();r.position.z=-0.08;g.add(r);
+      }
+      const legGeo=new THREE.CylinderGeometry(0.035,0.03,0.22,5);
+      const legs:THREE.Mesh[]=[];
+      ([[0.16,0.10],[0.16,-0.10],[-0.16,0.10],[-0.16,-0.10]] as [number,number][]).forEach(([lx,lz])=>{
+        const leg=new THREE.Mesh(legGeo,darkMat);leg.position.set(lx,0.11,lz);g.add(leg);legs.push(leg);
+      });
+      if(cfg.tailType==="bushy"){
+        const tail=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.34,6),bodyMat);
+        tail.position.set(-0.30,0.30,0);tail.rotation.z=Math.PI/2.6;g.add(tail);
+      }else if(cfg.tailType==="thin"){
+        const tail=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.015,0.34,5),darkMat);
+        tail.position.set(-0.30,0.30,0);tail.rotation.z=Math.PI/2.3;g.add(tail);
+      }else if(cfg.tailType==="short"){
+        const tail=new THREE.Mesh(new THREE.SphereGeometry(0.05,5,4),darkMat);
+        tail.position.set(-0.24,0.24,0);g.add(tail);
+      }else if(cfg.tailType==="trunk"){
+        const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.02,0.28,5),bodyMat);
+        trunk.position.set(0.40,0.16,0);trunk.rotation.z=Math.PI/2.2;g.add(trunk);
+        const eg=new THREE.CircleGeometry(0.14,10);
+        const l=new THREE.Mesh(eg,darkMat);l.position.set(0.22,0.34,0.16);l.rotation.y=Math.PI/2.5;g.add(l);
+        const r=l.clone();r.position.z=-0.16;r.rotation.y=-Math.PI/2.5;g.add(r);
+      }
+      if(cfg.hasMane){
+        const mane=new THREE.Mesh(new THREE.SphereGeometry(0.19,8,6),darkMat);
+        mane.position.set(0.26,0.30,0);g.add(mane);
+      }
+      if(cfg.hasHorn){
+        const horn=new THREE.Mesh(new THREE.ConeGeometry(0.035,0.16,5),new THREE.MeshLambertMaterial({color:0xe8e0c8}));
+        horn.position.set(0.42,0.30,0);horn.rotation.z=-Math.PI/2.3;g.add(horn);
+      }
+      g.scale.setScalar(cfg.scale);g.userData.legs=legs;g.userData.kind="quad";
+      return g;
+    }
+    function mkBird(cfg:PetVisualCfg):THREE.Group{
+      const g=new THREE.Group();
+      const bodyMat=new THREE.MeshLambertMaterial({color:cfg.bodyColor,emissive:cfg.glow?cfg.bodyColor:0x000000,emissiveIntensity:cfg.glow?0.6:0});
+      const wingMat=new THREE.MeshLambertMaterial({color:cfg.secondaryColor,emissive:cfg.glow?cfg.secondaryColor:0x000000,emissiveIntensity:cfg.glow?0.5:0,side:THREE.DoubleSide});
+      const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.09,0.22,4,8),bodyMat);
+      body.rotation.z=Math.PI/2;g.add(body);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,6),bodyMat);
+      head.position.set(0.18,0.05,0);g.add(head);
+      const beak=new THREE.Mesh(new THREE.ConeGeometry(0.03,0.08,5),new THREE.MeshLambertMaterial({color:0xffaa00}));
+      beak.rotation.z=-Math.PI/2;beak.position.set(0.27,0.04,0);g.add(beak);
+      const wingGeo=new THREE.PlaneGeometry(0.32,0.14);
+      const lWing=new THREE.Mesh(wingGeo,wingMat);lWing.position.set(0,0.02,0.10);lWing.rotation.y=0.3;g.add(lWing);
+      const rWing=new THREE.Mesh(wingGeo,wingMat);rWing.position.set(0,0.02,-0.10);rWing.rotation.y=-0.3;g.add(rWing);
+      const tail=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.22,5),wingMat);
+      tail.rotation.z=Math.PI/2;tail.position.set(-0.20,0.02,0);g.add(tail);
+      if(cfg.glow){const light=new THREE.PointLight(cfg.bodyColor,1.2,3);g.add(light);}
+      g.scale.setScalar(cfg.scale);g.userData.wings=[lWing,rWing];g.userData.kind="bird";
+      return g;
+    }
+    function mkReptile(cfg:PetVisualCfg):THREE.Group{
+      const g=new THREE.Group();
+      const bodyMat=new THREE.MeshLambertMaterial({color:cfg.bodyColor});
+      const darkMat=new THREE.MeshLambertMaterial({color:cfg.secondaryColor});
+      const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.11,0.4,4,8),bodyMat);
+      body.rotation.z=Math.PI/2;body.position.y=0.12;g.add(body);
+      const head=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.2,6),bodyMat);
+      head.rotation.z=-Math.PI/2;head.position.set(0.34,0.12,0);g.add(head);
+      const tail=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.09,0.5,6),darkMat);
+      tail.rotation.z=Math.PI/2;tail.position.set(-0.42,0.10,0);g.add(tail);
+      const legGeo=new THREE.CylinderGeometry(0.025,0.02,0.14,5);
+      const legs:THREE.Mesh[]=[];
+      ([[0.14,0.10],[0.14,-0.10],[-0.10,0.10],[-0.10,-0.10]] as [number,number][]).forEach(([lx,lz])=>{
+        const leg=new THREE.Mesh(legGeo,darkMat);leg.position.set(lx,0.07,lz);leg.rotation.x=0.6*(lz>0?1:-1);g.add(leg);legs.push(leg);
+      });
+      g.scale.setScalar(cfg.scale);g.userData.legs=legs;g.userData.kind="quad";
+      return g;
+    }
+    function mkPetModel(name:string):THREE.Group{
+      const cfg=PET_VISUALS[name]||PET_VISUALS["Squirrel"];
+      if(cfg.kind==="bird")return mkBird(cfg);
+      if(cfg.kind==="reptile")return mkReptile(cfg);
+      return mkQuadruped(cfg);
+    }
+    let petGroup:THREE.Group|null=null;let petBobT=Math.random()*10;
+    if(selectedPet&&selectedPet.name){
+      petGroup=mkPetModel(selectedPet.name);
+      petGroup.position.set(homeCX+0.8,getH(homeCX+0.8,homeCZ+0.5),homeCZ+0.5);
+      scene.add(petGroup);
     }
 
     // ── Humanoid person builder ────────────────────────────────────────────
@@ -599,7 +752,7 @@ export default function World(){
 
     // ── Car ────────────────────────────────────────────────────────────────
     const carY=getH(csx,csz); // csx,csz already defined above (home door-front point)
-    const carBodyM=new THREE.MeshStandardMaterial({color:cfg.id==="multan"?0xa56a2a:cfg.id==="karachi"?0x214d8f:0x4a5664,roughness:0.55,metalness:0.25});
+    const carBodyM=new THREE.MeshPhysicalMaterial({color:cfg.id==="multan"?0xa56a2a:cfg.id==="karachi"?0x214d8f:0x4a5664,roughness:0.35,metalness:0.65,clearcoat:0.8,clearcoatRoughness:0.15});
     const carGlassM=new THREE.MeshStandardMaterial({color:0x91b6d8,transparent:true,opacity:0.55,roughness:0.12,metalness:0.08});
     const wheelM2=new THREE.MeshLambertMaterial({color:0x222222});
     const carGroup=new THREE.Group();
@@ -838,6 +991,26 @@ export default function World(){
 
     function animate(){
       animId=requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),0.05);
+
+      // Pet companion — player ke peeche follow karta hai, chal/udd ke animate hota hai
+      if(petGroup){
+        petBobT+=dt;
+        const targetX=camera.position.x-1.4,targetZ=camera.position.z-1.4;
+        petGroup.position.x+=(targetX-petGroup.position.x)*Math.min(1,dt*3);
+        petGroup.position.z+=(targetZ-petGroup.position.z)*Math.min(1,dt*3);
+        const groundY=getH(petGroup.position.x,petGroup.position.z);
+        if(petGroup.userData.kind==="bird"){
+          petGroup.position.y=groundY+1.3+Math.sin(petBobT*3)*0.15;
+          const wings=petGroup.userData.wings as THREE.Mesh[]|undefined;
+          if(wings)wings.forEach((w,i)=>{w.rotation.z=Math.sin(petBobT*10)*0.5*(i===0?1:-1);});
+        }else{
+          petGroup.position.y=groundY+0.02+Math.abs(Math.sin(petBobT*6))*0.04;
+          const legs=petGroup.userData.legs as THREE.Mesh[]|undefined;
+          if(legs)legs.forEach((l,i)=>{l.rotation.x=Math.sin(petBobT*6+i*Math.PI/2)*0.3;});
+        }
+        const dx=camera.position.x-petGroup.position.x,dz=camera.position.z-petGroup.position.z;
+        if(Math.abs(dx)+Math.abs(dz)>0.05)petGroup.rotation.y=Math.atan2(dx,dz);
+      }
 
       // Day/Night
       dayTime=(dayTime+DAY_SPEED)%1;
