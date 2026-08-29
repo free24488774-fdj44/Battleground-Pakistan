@@ -233,7 +233,7 @@ export default function World(){
     const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85]};
     const [csx,csz]=carSpawns[cfg.id]||[20,-20];
     const homeCX=csx,homeCZ=csz-5; // home center thora peeche, darwaza car ki taraf (+z) khulta hai
-    camera.position.set(homeCX,getH(homeCX,homeCZ)+1.9,homeCZ-2.3); // andar, darwaze ki taraf mun karke
+    camera.position.set(homeCX,getH(homeCX,homeCZ)+1.9,homeCZ); // ghar ke andar, beech mein (deewaron se clash nahi hoga)
 
     const controls=new PointerLockControls(camera,renderer.domElement);
     if(!isMobileLocal){

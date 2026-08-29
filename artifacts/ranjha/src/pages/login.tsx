@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User, Mail, Facebook, Github } from "lucide-react";
@@ -8,9 +9,18 @@ import bgLogin from "@/assets/images/bg-login.png";
 export default function Login() {
   const [, setLocation] = useLocation();
   const { login } = useGame();
+  const [step, setStep] = useState<'choose' | 'username'>('choose');
+  const [pendingType, setPendingType] = useState<'google' | 'facebook' | 'guest'>('guest');
+  const [username, setUsername] = useState("");
 
+  // Provider choose karne par (Google/Facebook/Guest) — pehli baar hai to username step dikhayein
   const handleLogin = (type: 'google' | 'facebook' | 'guest') => {
-    login(type);
+    setPendingType(type);
+    setStep('username');
+  };
+
+  const confirmUsername = () => {
+    login(pendingType, username);
     setLocation("/lobby");
   };
 
@@ -36,6 +46,7 @@ export default function Login() {
           <p className="font-display tracking-[0.3em] text-primary/80 text-sm mt-2">BATTLE ROYALE</p>
         </motion.div>
 
+        {step === 'choose' && (
         <motion.div
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -80,6 +91,42 @@ export default function Login() {
             Guest data cannot be transferred or shared
           </p>
         </motion.div>
+        )}
+
+        {step === 'username' && (
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="w-full flex flex-col gap-4"
+        >
+          <p className="text-center text-white/70 font-display tracking-wider text-sm">
+            APNA USERNAME CHUNEIN
+          </p>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.slice(0, 20))}
+            placeholder="Username likhein..."
+            autoFocus
+            onKeyDown={(e) => { if (e.key === "Enter" && username.trim()) confirmUsername(); }}
+            className="w-full bg-white/10 text-white font-display px-6 py-4 rounded-lg border border-white/20 focus:border-primary focus:outline-none placeholder:text-white/30"
+          />
+          <button
+            onClick={confirmUsername}
+            disabled={!username.trim()}
+            className="w-full flex items-center justify-center gap-3 bg-primary text-black font-display font-bold px-6 py-4 rounded-lg hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            GAME SHURU KAREIN
+          </button>
+          <button
+            onClick={() => setStep('choose')}
+            className="text-center text-xs text-white/40 font-sans hover:text-white/70"
+          >
+            ← Wapis jayein
+          </button>
+        </motion.div>
+        )}
       </div>
     </div>
   );

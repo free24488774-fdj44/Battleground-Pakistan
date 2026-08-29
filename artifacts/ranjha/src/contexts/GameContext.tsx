@@ -56,7 +56,7 @@ interface GameState {
 }
 
 interface GameContextType extends GameState {
-  login: (type: 'google' | 'facebook' | 'guest') => void;
+  login: (type: 'google' | 'facebook' | 'guest', username?: string) => void;
   logout: () => void;
   updateProfile: (updates: Partial<PlayerProfile>) => void;
   equipCharacter: (character: Character) => void;
@@ -90,10 +90,10 @@ const STARTER_SKILLS = ["skill_1", "skill_2"]; // Mughal Fury, Sindhi Shield
 
 const DIAMONDS_PER_LEVEL = 50;
 
-function makeStarterProfile(): PlayerProfile {
+function makeStarterProfile(username?: string): PlayerProfile {
   return {
     uid: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
-    name: `RanjhaWarrior${Math.floor(1000 + Math.random() * 9000)}`,
+    name: username && username.trim() ? username.trim() : `RanjhaWarrior${Math.floor(1000 + Math.random() * 9000)}`,
     level: 1,
     xp: 0,
     coins: 10000,
@@ -185,8 +185,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => localStorage.setItem("ranjha_map", JSON.stringify(selectedMap)), [selectedMap]);
   useEffect(() => localStorage.setItem("ranjha_friends", JSON.stringify(friends)), [friends]);
 
-  const login = (_type: 'google' | 'facebook' | 'guest') => {
-    if (!profile) setProfile(makeStarterProfile());
+  const login = (_type: 'google' | 'facebook' | 'guest', username?: string) => {
+    if (!profile) setProfile(makeStarterProfile(username));
   };
 
   const logout = () => {

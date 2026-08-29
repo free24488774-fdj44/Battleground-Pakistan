@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import bgSplash from "@/assets/images/bg-splash.png";
+import { useGame } from "@/contexts/GameContext";
 
 const SLIDES = [
   { text: "WHERE LEGENDS RISE" },
@@ -11,10 +12,20 @@ const SLIDES = [
 
 export default function Splash() {
   const [, setLocation] = useLocation();
+  const { profile } = useGame();
   const [slideIndex, setSlideIndex] = useState(-1);
   const [showRanjha, setShowRanjha] = useState(false);
 
+  // Agar user pehle se login hai (username/profile already maujood hai),
+  // to login screen dikhaye bagair seedha lobby khol dein.
   useEffect(() => {
+    if (profile) {
+      setLocation("/lobby");
+    }
+  }, [profile, setLocation]);
+
+  useEffect(() => {
+    if (profile) return; // already logged in — splash animation skip
     // Show RANJHA text first
     setShowRanjha(true);
 
@@ -24,9 +35,10 @@ export default function Splash() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [profile]);
 
   useEffect(() => {
+    if (profile) return;
     if (slideIndex >= 0 && slideIndex < SLIDES.length) {
       const timer = setTimeout(() => {
         setSlideIndex(prev => prev + 1);
@@ -38,7 +50,7 @@ export default function Splash() {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [slideIndex, setLocation]);
+  }, [slideIndex, setLocation, profile]);
 
   return (
     <div 
