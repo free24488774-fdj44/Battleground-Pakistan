@@ -358,6 +358,12 @@ export default function Lobby() {
 
       {/* Bottom Right Play Button — seedha ghar (home) ke andar 3D world mein */}
       <div className="absolute bottom-6 right-6 z-30 flex items-end gap-3">
+        <button
+          onClick={() => setLocation("/garage")}
+          className="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-white font-display font-bold uppercase tracking-widest text-sm flex items-center gap-2 transition-all"
+        >
+          🔧 Garage
+        </button>
         <NeonButton
           size="xl"
           onClick={() => setLocation("/world")}

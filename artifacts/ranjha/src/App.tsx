@@ -8,11 +8,10 @@ import NotFound from "@/pages/not-found";
 import Splash from "@/pages/splash";
 import Login from "@/pages/login";
 import Lobby from "@/pages/lobby";
-import Matchmaking from "@/pages/matchmaking";
-import Battle from "@/pages/battle";
 import MapDetail from "@/pages/map-detail";
 import Live from "@/pages/live";
 import Profile from "@/pages/profile";
+import Garage from "@/pages/garage";
 import World from "@/pages/world";
 
 const queryClient = new QueryClient();
@@ -30,11 +29,13 @@ function Router() {
       <Route path="/" component={Splash} />
       <Route path="/login" component={Login} />
       <Route path="/lobby"><ProtectedRoute component={Lobby} /></Route>
-      <Route path="/matchmaking"><ProtectedRoute component={Matchmaking} /></Route>
-      <Route path="/battle"><ProtectedRoute component={Battle} /></Route>
+      {/* Matchmaking/Battle (fake 2D simulation) hata diye — ab seedha /world (real 3D game) chalta hai */}
+      <Route path="/matchmaking"><Redirect to="/world" /></Route>
+      <Route path="/battle"><Redirect to="/world" /></Route>
       <Route path="/map/:id"><ProtectedRoute component={MapDetail} /></Route>
       <Route path="/live"><ProtectedRoute component={Live} /></Route>
       <Route path="/profile"><ProtectedRoute component={Profile} /></Route>
+      <Route path="/garage"><ProtectedRoute component={Garage} /></Route>
       <Route path="/world"><ProtectedRoute component={World} /></Route>
       <Route component={NotFound} />
     </Switch>

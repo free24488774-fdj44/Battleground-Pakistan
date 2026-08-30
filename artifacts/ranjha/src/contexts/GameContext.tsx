@@ -9,6 +9,7 @@ import {
   MOCK_FRIENDS
 } from "@/lib/mock-data";
 import { Character, Pet, Gun, Outfit, Skill, GameMap, Friend } from "@/lib/types";
+import { VEHICLES, DEFAULT_MODS, VehicleModsState } from "@/lib/vehicles";
 
 interface PlayerProfile {
   uid: string;
@@ -47,6 +48,13 @@ interface GameState {
   profile: PlayerProfile | null;
   selectedCharacter: Character;
   selectedPet: Pet | null;
+  selectedVehicleId: string;
+  ownedVehicleIds: string[];
+  ownsVehicle: (id: string) => boolean;
+  selectVehicle: (id: string) => void;
+  buyVehicle: (id: string, price: number) => boolean;
+  getVehicleMods: (id: string) => VehicleModsState;
+  updateVehicleMods: (id: string, partial: Partial<VehicleModsState>) => void;
   selectedPrimaryGun: Gun | null;
   selectedSecondaryGun: Gun | null;
   selectedOutfit: Outfit | null;
@@ -139,6 +147,37 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem("ranjha_pet");
     return saved ? JSON.parse(saved) : PETS[0]; // Squirrel — starter
   });
+
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>(() => {
+    const saved = localStorage.getItem("ranjha_vehicle_id");
+    return saved ? JSON.parse(saved) : VEHICLES[0].id;
+  });
+  const [ownedVehicleIds, setOwnedVehicleIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem("ranjha_owned_vehicles");
+    return saved ? JSON.parse(saved) : [VEHICLES[0].id];
+  });
+  const [vehicleMods, setVehicleMods] = useState<Record<string, VehicleModsState>>(() => {
+    const saved = localStorage.getItem("ranjha_vehicle_mods");
+    return saved ? JSON.parse(saved) : { [VEHICLES[0].id]: DEFAULT_MODS };
+  });
+
+  useEffect(() => localStorage.setItem("ranjha_vehicle_id", JSON.stringify(selectedVehicleId)), [selectedVehicleId]);
+  useEffect(() => localStorage.setItem("ranjha_owned_vehicles", JSON.stringify(ownedVehicleIds)), [ownedVehicleIds]);
+  useEffect(() => localStorage.setItem("ranjha_vehicle_mods", JSON.stringify(vehicleMods)), [vehicleMods]);
+
+  const ownsVehicle = (id: string) => ownedVehicleIds.includes(id);
+  const selectVehicle = (id: string) => { if (ownsVehicle(id)) setSelectedVehicleId(id); };
+  const buyVehicle = (id: string, price: number) => {
+    if (ownsVehicle(id)) return false;
+    if ((profile?.coins ?? 0) < price) return false;
+    setOwnedVehicleIds(prev => [...prev, id]);
+    setProfile(prev => prev ? { ...prev, coins: prev.coins - price } : prev);
+    return true;
+  };
+  const getVehicleMods = (id: string): VehicleModsState => vehicleMods[id] ?? DEFAULT_MODS;
+  const updateVehicleMods = (id: string, partial: Partial<VehicleModsState>) => {
+    setVehicleMods(prev => ({ ...prev, [id]: { ...(prev[id] ?? DEFAULT_MODS), ...partial } }));
+  };
 
   const [selectedPrimaryGun, setSelectedPrimaryGun] = useState<Gun | null>(() => {
     const saved = localStorage.getItem("ranjha_primary_gun");
@@ -309,6 +348,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       profile,
       selectedCharacter,
       selectedPet,
+      selectedVehicleId,
+      ownedVehicleIds,
+      ownsVehicle,
+      selectVehicle,
+      buyVehicle,
+      getVehicleMods,
+      updateVehicleMods,
       selectedPrimaryGun,
       selectedSecondaryGun,
       selectedOutfit,

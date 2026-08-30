@@ -135,7 +135,7 @@ const DET_RANGE=0;const ATK_RANGE=5;const BASE_SPD=11;const SPRINT_M=2.1; // NPC
 export default function World(){
   const mountRef=useRef<HTMLDivElement>(null);
   const [,setLocation]=useLocation();
-  const { selectedPet } = useGame();
+  const { selectedPet, selectedVehicleId, getVehicleMods } = useGame();
 
   // Mobile detection (stable, computed once)
   const isMobile=typeof window!=="undefined"&&('ontouchstart' in window||navigator.maxTouchPoints>1);
@@ -1249,14 +1249,15 @@ export default function World(){
 
     // ── Car ────────────────────────────────────────────────────────────────
     const carY=getH(csx,csz); // csx,csz already defined above (home door-front point)
-    // ══ Active vehicle (VehicleSystem) — Phase 3 mein dealership se selection aayegi, abhi default ══
-    const activeVehicleDef=getVehicle(VEHICLES[0].id);
-    const activeVehicleStats=applyMods(activeVehicleDef.baseStats,DEFAULT_MODS);
+    // ══ Active vehicle (VehicleSystem) — Garage se select ki hui gaari aur uske mods ══
+    const activeVehicleDef=getVehicle(selectedVehicleId);
+    const activeMods=getVehicleMods(selectedVehicleId);
+    const activeVehicleStats=applyMods(activeVehicleDef.baseStats,activeMods);
     const vehiclePhysics=toArcadePhysics(activeVehicleStats);
 
-    const carBodyM=new THREE.MeshPhysicalMaterial({color:DEFAULT_MODS.paintColor,roughness:DEFAULT_MODS.finish==="matte"?0.75:0.35,metalness:0.65,clearcoat:DEFAULT_MODS.finish==="gloss"?0.9:0.3,clearcoatRoughness:0.15});
+    const carBodyM=new THREE.MeshPhysicalMaterial({color:activeMods.paintColor,roughness:activeMods.finish==="matte"?0.75:0.35,metalness:0.65,clearcoat:activeMods.finish==="gloss"?0.9:0.3,clearcoatRoughness:0.15});
     const carGlassM=new THREE.MeshStandardMaterial({color:0x91b6d8,transparent:true,opacity:0.55,roughness:0.12,metalness:0.08});
-    const wheelM2=new THREE.MeshLambertMaterial({color:0x222222});
+    const wheelM2=new THREE.MeshLambertMaterial({color:activeMods.wheelColor});
     const carGroup=new THREE.Group();
     const carBody=new THREE.Mesh(new THREE.BoxGeometry(2.45,0.58,4.7),carBodyM);carBody.position.y=0.55;carGroup.add(carBody);
     const hood=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.38,1.25),carBodyM);hood.position.set(0,0.62,-1.52);hood.rotation.x=-0.08;carGroup.add(hood);
