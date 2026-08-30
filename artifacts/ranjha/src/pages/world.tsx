@@ -60,6 +60,24 @@ const MAPS:MapConfig[]=[
   {id:"islamabad",name:"Margalla Hills",emoji:"🕌",desc:"Capital city — wide boulevards, Faisal Masjid, green parks under the hills",
    skyDay:new THREE.Color(0x7fb0e0),fogDensity:0.004,biome:"capital",sunColor:0xfff2d8,ambientHex:0x8fae8f,groundHex:0x4a7a3a,
    skinTone:0xc4986a,shirtColor:0x3a5a3a,pantsColor:0x2a2a2a},
+  {id:"faisalabad",name:"Clock Tower",emoji:"🕰",desc:"Faisalabad's iconic 8-spoke bazaar wheel, radiating out from Ghanta Ghar",
+   skyDay:new THREE.Color(0xcfa878),fogDensity:0.006,biome:"bazaar",sunColor:0xffcc99,ambientHex:0xb09878,groundHex:0x8a7860,
+   skinTone:0xb8865a,shirtColor:0x6a5a3a,pantsColor:0x2a2420},
+  {id:"skardu",name:"Skardu Lakes",emoji:"🏞",desc:"K2's gateway — turquoise lakes, Shangrila's red-roof cottages, snow giants",
+   skyDay:new THREE.Color(0x6fa8e0),fogDensity:0.003,biome:"lakes",sunColor:0xffffff,ambientHex:0x9ab0c8,groundHex:0x7a8060,
+   skinTone:0xc4a078,shirtColor:0x8a3838,pantsColor:0x3a3630},
+  {id:"murree",name:"Murree Hills",emoji:"🌲",desc:"Pine-forested hill station — colorful cottages, cool mist, winding hill roads",
+   skyDay:new THREE.Color(0x9ab8cf),fogDensity:0.008,biome:"hillstation",sunColor:0xeef2ea,ambientHex:0x7a9a7a,groundHex:0x2a4a28,
+   skinTone:0xc4a082,shirtColor:0x6a3838,pantsColor:0x2a2a2a},
+  {id:"peshawar",name:"Peshawar Bazaar",emoji:"🏪",desc:"Old-city bazaar streets — dense shopfronts, motorbikes, decorated trucks",
+   skyDay:new THREE.Color(0xd8c0a0),fogDensity:0.007,biome:"bazaar2",sunColor:0xffddaa,ambientHex:0xb8a888,groundHex:0x8a7a5a,
+   skinTone:0xb8865a,shirtColor:0x4a5a3a,pantsColor:0xe8e0d0},
+  {id:"quetta",name:"Quetta Highlands",emoji:"⛰",desc:"Balochistan's dry highland city — sandy tones, university district",
+   skyDay:new THREE.Color(0xe0c8a0),fogDensity:0.004,biome:"highland",sunColor:0xffe8c0,ambientHex:0xc0a880,groundHex:0xa08858,
+   skinTone:0xb8886a,shirtColor:0x5a4a3a,pantsColor:0x8a7858},
+  {id:"kaghan",name:"Naran-Kaghan",emoji:"🏔",desc:"Kunhar River valley — hotels lining the water, snow peaks on both sides",
+   skyDay:new THREE.Color(0x7fb0dd),fogDensity:0.003,biome:"river",sunColor:0xffffff,ambientHex:0x9ab0b8,groundHex:0x5a7050,
+   skinTone:0xc4a078,shirtColor:0x4a5a6a,pantsColor:0x2a2a2a},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -240,7 +258,7 @@ export default function World(){
     const camera=new THREE.PerspectiveCamera(72,container.clientWidth/container.clientHeight,0.2,farPlane);
 
     // ── Home spawn point (per map) — player match shuru hotay hi ghar ke andar spawn hota hai ──
-    const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85],islamabad:[20,-30]};
+    const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85],islamabad:[20,-30],faisalabad:[45,45],skardu:[20,50],murree:[15,25],peshawar:[20,20],quetta:[20,20],kaghan:[15,20]};
     const [csx,csz]=carSpawns[cfg.id]||[20,-20];
     const homeCX=csx,homeCZ=csz-5; // home center thora peeche, darwaza car ki taraf (+z) khulta hai
     camera.position.set(homeCX,getH(homeCX,homeCZ)+1.9,homeCZ); // ghar ke andar, beech mein (deewaron se clash nahi hoga)
@@ -283,6 +301,18 @@ export default function World(){
         case"islamabad":{const nx=x/500,nz=z/500;const flat=noise2D(nx*3,nz*3)*0.6+noise2D(nx*8,nz*8)*0.25;
           const hills=z>90?Math.pow(Math.max(0,(z-90)/90),1.3)*60+noise2D(nx*2,nz*2)*8:0;
           return flat+hills+1.5;}
+        case"faisalabad":{const nx=x/500,nz=z/500;return noise2D(nx*4,nz*4)*0.8+noise2D(nx*12,nz*12)*0.3+1.2;}
+        case"skardu":{const nx=x/500,nz=z/500;const valley=noise2D(nx*4,nz*4)*1.5+noise2D(nx*10,nz*10)*0.4;
+          const peaks=Math.abs(x)>140?Math.pow((Math.abs(x)-140)/100,1.4)*90+noise2D(nx*3,nz*3)*15:0;
+          return valley+peaks+2;}
+        case"murree":{const nx=x/400,nz=z/400;return noise2D(nx*3,nz*3)*12+noise2D(nx*9,nz*9)*3+8;}
+        case"peshawar":{const nx=x/500,nz=z/500;return noise2D(nx*4,nz*4)*0.7+noise2D(nx*12,nz*12)*0.25+1;}
+        case"quetta":{const nx=x/500,nz=z/500;const flat=noise2D(nx*4,nz*4)*1.2+noise2D(nx*10,nz*10)*0.3;
+          const ridge=Math.abs(z)>130?Math.pow((Math.abs(z)-130)/90,1.3)*50:0;
+          return flat+ridge+1.5;}
+        case"kaghan":{const nx=x/500,nz=z/500;const valley=noise2D(nx*4,nz*4)*1.2+noise2D(nx*10,nz*10)*0.3;
+          const peaks=Math.abs(x)>90?Math.pow((Math.abs(x)-90)/80,1.3)*80+noise2D(nx*3,nz*3)*12:0;
+          return valley+peaks+2;}
         default:return 0;
       }
     }
@@ -362,6 +392,12 @@ export default function World(){
         multan:{wall:0xd4a84b,roof:0xb08030,door:0x5a3a1a},
         karachi:{wall:0xe0d8c8,roof:0x8899aa,door:0x40342a},
         islamabad:{wall:0xe8e4d8,roof:0xc84040,door:0x3a2818},
+        faisalabad:{wall:0xc8a878,roof:0x8a5a3a,door:0x4a3018},
+        skardu:{wall:0xb8ac98,roof:0x8a3030,door:0x3a2818},
+        murree:{wall:0xc8b898,roof:0x3a6a5a,door:0x3a2818},
+        peshawar:{wall:0xc8b088,roof:0x6a5838,door:0x3a2818},
+        quetta:{wall:0xd8c098,roof:0x8a7050,door:0x3a2818},
+        kaghan:{wall:0xc8b8a0,roof:0x5a4838,door:0x3a2818},
       };
       const hs=HOME_STYLE[cfg.id]||HOME_STYLE.lahore;
       const wallM=new THREE.MeshLambertMaterial({color:hs.wall});
@@ -883,6 +919,167 @@ export default function World(){
         track.rotation.x=-Math.PI/2;track.position.set(parkCX,my+0.15,parkCZ);scene.add(track);
         civilianPositions.push({x:parkCX+15,z:parkCZ+5});civilianPositions.push({x:parkCX-10,z:parkCZ-15});
       }
+    }else if(cfg.id==="faisalabad"){
+      const bazaarM=new THREE.MeshLambertMaterial({color:0xc4a878});
+      const roadFM=new THREE.MeshLambertMaterial({color:0x3a3632});
+      const towerM=new THREE.MeshLambertMaterial({color:0xd8c8a0});
+
+      // ══ Ghanta Ghar (Clock Tower) — center mein, 8 sadkein yahan se phailti hain ══
+      {
+        const my=getH(0,0);
+        const towerH=18;
+        const base=new THREE.Mesh(new THREE.CylinderGeometry(4,5,8,4),towerM);
+        base.position.set(0,my+4,0);base.rotation.y=Math.PI/8;base.castShadow=!isMobileLocal;scene.add(base);
+        const spire=new THREE.Mesh(new THREE.CylinderGeometry(2.2,3,towerH-8,4),towerM);
+        spire.position.set(0,my+8+(towerH-8)/2,0);spire.rotation.y=Math.PI/8;spire.castShadow=!isMobileLocal;scene.add(spire);
+        const cap=new THREE.Mesh(new THREE.ConeGeometry(2.5,3,4),new THREE.MeshLambertMaterial({color:0x6a5838}));
+        cap.position.set(0,my+towerH+1.5,0);cap.rotation.y=Math.PI/8;scene.add(cap);
+        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0,my+towerH/2,0),new THREE.Vector3(10,towerH,10)));
+      }
+
+      // ══ 8 spokes — sadkein center se bahar phailti hain, har spoke ke saath dukanein ══
+      for(let s=0;s<8;s++){
+        const ang=s*(Math.PI*2/8);
+        const road=new THREE.Mesh(new THREE.BoxGeometry(6,0.12,75),roadFM);
+        road.position.set(Math.sin(ang)*40,getH(Math.sin(ang)*40,Math.cos(ang)*40)+0.06,Math.cos(ang)*40);
+        road.rotation.y=ang;scene.add(road);
+        // Har spoke ke sath dukanein (dono taraf)
+        for(let d=12;d<70;d+=10){
+          [-1,1].forEach(side=>{
+            const perpAng=ang+Math.PI/2;
+            const bx=Math.sin(ang)*d+Math.sin(perpAng)*side*5,bz=Math.cos(ang)*d+Math.cos(perpAng)*side*5;
+            if(Math.abs(bx-homeCX)<8&&Math.abs(bz-homeCZ)<8)return; // home ke pass nahi
+            const by=getH(bx,bz);const h=3+Math.random()*3;
+            const bld=new THREE.Mesh(new THREE.BoxGeometry(4.5,h,4.5),bazaarM);
+            bld.position.set(bx,by+h/2,bz);bld.rotation.y=ang;bld.castShadow=!isMobileLocal;scene.add(bld);
+            bldBoxes.push(new THREE.Box3().setFromObject(bld));
+            if(Math.random()<0.3)civilianPositions.push({x:bx+(Math.random()-0.5)*3,z:bz+(Math.random()-0.5)*3});
+          });
+        }
+      }
+    }else if(cfg.id==="skardu"){
+      const cottageM=new THREE.MeshLambertMaterial({color:0x8a6858});
+      const roofRedM=new THREE.MeshLambertMaterial({color:0x8a3030});
+      const lakeM=new THREE.MeshLambertMaterial({color:0x1a8ea0,transparent:true,opacity:0.85});
+      const deckM=new THREE.MeshLambertMaterial({color:0xa89880});
+
+      // ══ Turquoise lake (Kachura-style) ══
+      const lakeCX=-60,lakeCZ=0;
+      {
+        const lG=new THREE.PlaneGeometry(70,110,10,10);lG.rotateX(-Math.PI/2);
+        const lake=new THREE.Mesh(lG,lakeM);
+        lake.position.set(lakeCX,getH(lakeCX,lakeCZ)-1.2,lakeCZ);scene.add(lake);
+      }
+
+      // ══ Shangrila Resort — maroon triangular-roof cottages, jhil ke kinare ══
+      for(let i=0;i<7;i++){
+        const cx=lakeCX+42,cz=-45+i*14;
+        if(Math.abs(cx-homeCX)<8&&Math.abs(cz-homeCZ)<8)continue;
+        const by=getH(cx,cz);const h=4.5;
+        const body=new THREE.Mesh(new THREE.BoxGeometry(6,h,5),cottageM);
+        body.position.set(cx,by+h/2,cz);body.castShadow=!isMobileLocal;scene.add(body);
+        const roof=new THREE.Mesh(new THREE.ConeGeometry(4.5,3.5,4),roofRedM);
+        roof.position.set(cx,by+h+1.75,cz);roof.rotation.y=Math.PI/4;scene.add(roof);
+        bldBoxes.push(new THREE.Box3().setFromObject(body));
+        civilianPositions.push({x:cx+4,z:cz});
+      }
+      // Lake ke kinare deck/walkway
+      const deck=new THREE.Mesh(new THREE.BoxGeometry(4,0.15,100),deckM);
+      deck.position.set(lakeCX+32,getH(lakeCX+32,0)+0.08,0);scene.add(deck);
+    }else if(cfg.id==="murree"){
+      const cottageMurM=new THREE.MeshLambertMaterial({color:0xd8d0c0});
+      const roofColors=[0x8a3838,0x3a5a8a,0x3a6a4a,0x8a6a2a];
+      let seedM=7;const mrand=()=>{seedM=(seedM*9301+49297)%233280;return seedM/233280;};
+
+      // ══ Rangeen cottages, pine forest ke beech organic (non-grid) bikhri hui ══
+      for(let i=0;i<26;i++){
+        const cx=(mrand()-0.5)*160,cz=(mrand()-0.5)*160;
+        if(Math.abs(cx-homeCX)<8&&Math.abs(cz-homeCZ)<8)continue;
+        const by=getH(cx,cz);const h=3.5+mrand()*2;
+        const body=new THREE.Mesh(new THREE.BoxGeometry(4.5,h,4),cottageMurM);
+        body.position.set(cx,by+h/2,cz);body.rotation.y=mrand()*Math.PI*2;body.castShadow=!isMobileLocal;scene.add(body);
+        const roof=new THREE.Mesh(new THREE.ConeGeometry(3.5,2.5,4),new THREE.MeshLambertMaterial({color:roofColors[Math.floor(mrand()*roofColors.length)]}));
+        roof.position.set(cx,by+h+1.25,cz);roof.rotation.y=Math.PI/4;scene.add(roof);
+        bldBoxes.push(new THREE.Box3().setFromObject(body));
+        if(mrand()<0.4)civilianPositions.push({x:cx+3,z:cz+3});
+      }
+    }else if(cfg.id==="peshawar"){
+      const shopM=new THREE.MeshLambertMaterial({color:0xc4a878});
+      const shopM2=new THREE.MeshLambertMaterial({color:0xb89868});
+      const roadPM=new THREE.MeshLambertMaterial({color:0x383430});
+      let seedP=3;const prand=()=>{seedP=(seedP*9301+49297)%233280;return seedP/233280;};
+
+      // ══ Bazaar road, dono taraf dense dukanein (shopfronts) ══
+      const road=new THREE.Mesh(new THREE.BoxGeometry(10,0.12,150),roadPM);
+      road.position.set(0,getH(0,0)+0.06,0);scene.add(road);
+      for(let i=0;i<20;i++){
+        const bz=-70+i*7;
+        [-1,1].forEach(side=>{
+          const bx=side*9;
+          if(Math.abs(bx-homeCX)<8&&Math.abs(bz-homeCZ)<8)return;
+          const by=getH(bx,bz);const h=3+prand()*3;
+          const shop=new THREE.Mesh(new THREE.BoxGeometry(5,h,5),prand()<0.5?shopM:shopM2);
+          shop.position.set(bx,by+h/2,bz);shop.castShadow=!isMobileLocal;scene.add(shop);
+          bldBoxes.push(new THREE.Box3().setFromObject(shop));
+          if(prand()<0.5)civilianPositions.push({x:bx-side*3,z:bz+prand()*2});
+        });
+      }
+    }else if(cfg.id==="quetta"){
+      const sandyM=new THREE.MeshLambertMaterial({color:0xd4b888});
+      const uniM=new THREE.MeshLambertMaterial({color:0xc8b078});
+      let seedQ=11;const qrand=()=>{seedQ=(seedQ*9301+49297)%233280;return seedQ/233280;};
+
+      // ══ University campus block ══
+      const uniCX=-50,uniCZ=30;
+      {
+        const by=getH(uniCX,uniCZ);
+        const uni=new THREE.Mesh(new THREE.BoxGeometry(28,7,16),uniM);
+        uni.position.set(uniCX,by+3.5,uniCZ);uni.castShadow=!isMobileLocal;scene.add(uni);
+        bldBoxes.push(new THREE.Box3().setFromObject(uni));
+        const playground=new THREE.Mesh(new THREE.BoxGeometry(20,0.1,20),new THREE.MeshLambertMaterial({color:0xc4a868}));
+        playground.position.set(uniCX,by+0.05,uniCZ-24);scene.add(playground);
+        civilianPositions.push({x:uniCX+16,z:uniCZ});
+      }
+
+      // ══ Irregular residential blocks (dusty/sandy) ══
+      for(let i=0;i<16;i++){
+        const bx=(qrand()-0.5)*150,bz=(qrand()-0.5)*150;
+        if(Math.abs(bx-homeCX)<8&&Math.abs(bz-homeCZ)<8)continue;
+        if(Math.abs(bx-uniCX)<20&&Math.abs(bz-uniCZ)<16)continue;
+        const by=getH(bx,bz);const h=3+qrand()*3;
+        const bld=new THREE.Mesh(new THREE.BoxGeometry(5+qrand()*3,h,5+qrand()*3),sandyM);
+        bld.position.set(bx,by+h/2,bz);bld.rotation.y=qrand()*Math.PI*2;bld.castShadow=!isMobileLocal;scene.add(bld);
+        bldBoxes.push(new THREE.Box3().setFromObject(bld));
+        if(qrand()<0.3)civilianPositions.push({x:bx+3,z:bz+3});
+      }
+    }else if(cfg.id==="kaghan"){
+      const hotelM=new THREE.MeshLambertMaterial({color:0xe0d8c8});
+      const hotelRoofM=new THREE.MeshLambertMaterial({color:0x6a5040});
+      const riverM=new THREE.MeshLambertMaterial({color:0x5aa8c0,transparent:true,opacity:0.8});
+
+      // ══ Kunhar River — sadak ke saath saath ══
+      {
+        const rG=new THREE.PlaneGeometry(16,TSIZE*0.9);rG.rotateX(-Math.PI/2);
+        const river=new THREE.Mesh(rG,riverM);
+        river.position.set(-24,getH(-24,0)-0.8,0);scene.add(river);
+      }
+      // Sadak river ke doosri taraf
+      const road=new THREE.Mesh(new THREE.BoxGeometry(6,0.12,TSIZE*0.9),new THREE.MeshLambertMaterial({color:0x3a3632}));
+      road.position.set(-8,getH(-8,0)+0.06,0);scene.add(road);
+
+      // ══ Hotels — sadak ke kinare ek line mein ══
+      for(let i=0;i<10;i++){
+        const hz=-90+i*20;
+        const hx=8;
+        if(Math.abs(hx-homeCX)<8&&Math.abs(hz-homeCZ)<8)continue;
+        const by=getH(hx,hz);const h=5+Math.random()*3;
+        const hotel=new THREE.Mesh(new THREE.BoxGeometry(8,h,7),hotelM);
+        hotel.position.set(hx,by+h/2,hz);hotel.castShadow=!isMobileLocal;scene.add(hotel);
+        const roof=new THREE.Mesh(new THREE.BoxGeometry(8.4,0.6,7.4),hotelRoofM);
+        roof.position.set(hx,by+h+0.3,hz);scene.add(roof);
+        bldBoxes.push(new THREE.Box3().setFromObject(hotel));
+        civilianPositions.push({x:hx+5,z:hz});
+      }
     }else{
       const concreteM=new THREE.MeshLambertMaterial({color:0xb0b8c0});
       const glassM=new THREE.MeshLambertMaterial({color:0x4477aa,transparent:true,opacity:0.7});
@@ -918,7 +1115,7 @@ export default function World(){
 
     // ── Trees ─────────────────────────────────────────────────────────────
     const trunkM=new THREE.MeshLambertMaterial({color:0x5c3d1a});
-    const leafColors:{[k:string]:number}={hunza:0x2a5a2c,lahore:0x3a6e1a,multan:0xaa8833,karachi:0x4a8e22,islamabad:0x2a6e1a};
+    const leafColors:{[k:string]:number}={hunza:0x2a5a2c,lahore:0x3a6e1a,multan:0xaa8833,karachi:0x4a8e22,islamabad:0x2a6e1a,faisalabad:0x5a6e2a,skardu:0x2a5a3a,murree:0x1a4a20,peshawar:0x6a7a3a,quetta:0x7a8858,kaghan:0x2a5a38};
     const leafM=new THREE.MeshLambertMaterial({color:leafColors[cfg.id]||0x3a6e1a});
     for(let i=0;i<(cfg.id==="multan"?30:80);i++){
       const a=Math.random()*Math.PI*2,dist=20+Math.random()*(cfg.id==="hunza"?80:180);
