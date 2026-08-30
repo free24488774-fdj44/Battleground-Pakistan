@@ -72,11 +72,19 @@ export default function Garage() {
 
         {/* Vehicle preview */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-4">
-          <div className="flex items-center justify-center h-40 mb-4" style={{ perspective: "600px" }}>
-            <div
-              className="w-56 h-28 rounded-lg shadow-2xl"
-              style={{ backgroundColor: `#${mods.paintColor.toString(16).padStart(6,"0")}`, transform: "rotateX(15deg) rotateY(-20deg)" }}
-            />
+          <div className="flex items-center justify-center h-40 mb-4">
+            <svg viewBox="0 0 200 90" className="w-64 h-auto drop-shadow-2xl">
+              <ellipse cx="100" cy="80" rx="90" ry="6" fill="#000" opacity="0.35" />
+              <path d="M20,60 Q15,35 45,30 L65,15 Q80,8 120,8 L140,15 Q165,20 180,35 L182,60 Q182,68 172,68 L28,68 Q20,68 20,60 Z"
+                fill={`#${mods.paintColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.25" strokeWidth="1.5" />
+              <path d="M62,30 L78,16 Q90,11 118,11 L134,16 L138,30 Z" fill="#91b6d8" opacity="0.7" />
+              <line x1="100" y1="12" x2="100" y2="30" stroke="#00000030" strokeWidth="1.5" />
+              <circle cx="55" cy="68" r="14" fill={`#${mods.wheelColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.3" strokeWidth="2" />
+              <circle cx="55" cy="68" r="5" fill="#888" />
+              <circle cx="150" cy="68" r="14" fill={`#${mods.wheelColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.3" strokeWidth="2" />
+              <circle cx="150" cy="68" r="5" fill="#888" />
+              <rect x="178" y="42" width="5" height="10" rx="1.5" fill="#ffcc66" />
+            </svg>
           </div>
           <h2 className="text-center font-display text-xl font-bold text-white">{viewing.name}</h2>
           <p className="text-center text-white/50 text-sm mb-4">{viewing.category} — {viewing.baseStats.drivetrain}</p>

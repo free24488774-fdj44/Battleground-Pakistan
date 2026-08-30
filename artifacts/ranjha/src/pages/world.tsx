@@ -1258,28 +1258,42 @@ export default function World(){
     const carBodyM=new THREE.MeshPhysicalMaterial({color:activeMods.paintColor,roughness:activeMods.finish==="matte"?0.75:0.35,metalness:0.65,clearcoat:activeMods.finish==="gloss"?0.9:0.3,clearcoatRoughness:0.15});
     const carGlassM=new THREE.MeshStandardMaterial({color:0x91b6d8,transparent:true,opacity:0.55,roughness:0.12,metalness:0.08});
     const wheelM2=new THREE.MeshLambertMaterial({color:activeMods.wheelColor});
+    const CATEGORY_SCALE:{[k:string]:[number,number,number]}={
+      Hatchback:[0.92,1.0,0.82],Sedan:[1,1,1],SUV:[1.08,1.32,1.05],
+      Sports:[1.05,0.74,1.12],Muscle:[1.1,0.94,1.15],Pickup:[1.05,1.05,1.32],
+      Offroad:[1.06,1.24,1.06],Classic:[0.98,1.08,0.92],
+    };
+    const [csX,csY,csZ]=CATEGORY_SCALE[activeVehicleDef.category]||[1,1,1];
+
     const carGroup=new THREE.Group();
-    const carBody=new THREE.Mesh(new THREE.BoxGeometry(2.45,0.58,4.7),carBodyM);carBody.position.y=0.55;carGroup.add(carBody);
-    const hood=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.38,1.25),carBodyM);hood.position.set(0,0.62,-1.52);hood.rotation.x=-0.08;carGroup.add(hood);
-    const cab=new THREE.Mesh(new THREE.BoxGeometry(2.08,0.78,2.05),carBodyM);cab.position.set(0,1.18,0.2);carGroup.add(cab);
-    const roof=new THREE.Mesh(new THREE.BoxGeometry(1.85,0.14,1.55),carBodyM);roof.position.set(0,1.62,0.18);carGroup.add(roof);
-    const grille=new THREE.Mesh(new THREE.BoxGeometry(1.65,0.2,0.14),new THREE.MeshStandardMaterial({color:0xdddddd,roughness:0.35,metalness:0.65}));grille.position.set(0,0.7,-2.34);carGroup.add(grille);
-    const bumper=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.18,0.18),new THREE.MeshStandardMaterial({color:0x1b1f25,roughness:0.85,metalness:0.1}));bumper.position.set(0,0.34,-2.22);carGroup.add(bumper);
-    const windshield=new THREE.Mesh(new THREE.PlaneGeometry(1.9,0.72),carGlassM);windshield.position.set(0,1.28,-0.92);windshield.rotation.x=0.35;carGroup.add(windshield);
-    const rearWindow=new THREE.Mesh(new THREE.PlaneGeometry(1.62,0.58),carGlassM);rearWindow.position.set(0,1.33,1.0);rearWindow.rotation.x=-0.27;carGroup.add(rearWindow);
+    const bodyGroup=new THREE.Group(); // sirf body scale hoga, wheels gol hi rahenge
+    bodyGroup.scale.set(csX,csY,csZ);
+    const carBody=new THREE.Mesh(new THREE.BoxGeometry(2.45,0.58,4.7),carBodyM);carBody.position.y=0.55;bodyGroup.add(carBody);
+    const hood=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.38,1.25),carBodyM);hood.position.set(0,0.62,-1.52);hood.rotation.x=-0.08;bodyGroup.add(hood);
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(2.08,0.78,2.05),carBodyM);cab.position.set(0,1.18,0.2);bodyGroup.add(cab);
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(1.85,0.14,1.55),carBodyM);roof.position.set(0,1.62,0.18);bodyGroup.add(roof);
+    const grille=new THREE.Mesh(new THREE.BoxGeometry(1.65,0.2,0.14),new THREE.MeshStandardMaterial({color:0xdddddd,roughness:0.35,metalness:0.65}));grille.position.set(0,0.7,-2.34);bodyGroup.add(grille);
+    const bumper=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.18,0.18),new THREE.MeshStandardMaterial({color:0x1b1f25,roughness:0.85,metalness:0.1}));bumper.position.set(0,0.34,-2.22);bodyGroup.add(bumper);
+    const windshield=new THREE.Mesh(new THREE.PlaneGeometry(1.9,0.72),carGlassM);windshield.position.set(0,1.28,-0.92);windshield.rotation.x=0.35;bodyGroup.add(windshield);
+    const rearWindow=new THREE.Mesh(new THREE.PlaneGeometry(1.62,0.58),carGlassM);rearWindow.position.set(0,1.33,1.0);rearWindow.rotation.x=-0.27;bodyGroup.add(rearWindow);
     [[-0.92,0.98,-0.12],[0.92,0.98,-0.12],[-0.92,0.98,0.88],[0.92,0.98,0.88]].forEach(([wx,wy,wz])=>{
       const win=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.48,0.58),new THREE.MeshStandardMaterial({color:0x6c8094,transparent:true,opacity:0.3,roughness:0.15,metalness:0.05}));
-      win.position.set(wx,wy,wz);carGroup.add(win);
+      win.position.set(wx,wy,wz);bodyGroup.add(win);
     });
     [[-1.45,0.28,-1.55],[1.45,0.28,-1.55],[-1.45,0.28,1.55],[1.45,0.28,1.55]].forEach(([wx,wy,wz])=>{
       const arch=new THREE.Mesh(new THREE.TorusGeometry(0.52,0.08,8,12),new THREE.MeshStandardMaterial({color:0x1b1b1b,roughness:0.95,metalness:0.05}));
-      arch.rotation.y=Math.PI/2;arch.position.set(wx,wy,wz);carGroup.add(arch);
+      arch.rotation.y=Math.PI/2;arch.position.set(wx,wy,wz);bodyGroup.add(arch);
     });
-    [[-1.4,0.4,-1.8],[1.4,0.4,-1.8],[-1.4,0.4,1.8],[1.4,0.4,1.8]].forEach(([wx,wy,wz])=>{
+    carGroup.add(bodyGroup);
+    // Wheels seedhe carGroup mein (unscaled — hamesha gol), position sirf lambai/chaurai ke hisab se badalti hai
+    const wheelYOffset=activeVehicleDef.category==="SUV"||activeVehicleDef.category==="Offroad"?0.5:activeVehicleDef.category==="Sports"?0.32:0.4;
+    [[-1.4,-1.8],[1.4,-1.8],[-1.4,1.8],[1.4,1.8]].forEach(([wx,wz])=>{
       const wheel=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.32,10),wheelM2);
-      wheel.rotation.z=Math.PI/2;wheel.position.set(wx,wy,wz);carGroup.add(wheel);
+      wheel.rotation.z=Math.PI/2;wheel.position.set(wx*csX,wheelYOffset,wz*csZ);
+      carGroup.add(wheel);
     });
-    carGroup.position.set(csx,carY+0.36,csz);scene.add(carGroup);
+    carGroup.position.set(csx,carY+0.36,csz);
+    scene.add(carGroup);
     carRef.current={group:carGroup,vel:0,heading:0,steer:0,inUse:false};
 
     // ── NPCs (humanoid models) ─────────────────────────────────────────────
