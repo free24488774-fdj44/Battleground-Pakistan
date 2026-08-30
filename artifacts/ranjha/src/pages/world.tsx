@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import * as THREE from "three";
 import { createNoise2D } from "simplex-noise";
 import { useGame } from "@/contexts/GameContext";
+import { VEHICLES, getVehicle, applyMods, toArcadePhysics, DEFAULT_MODS } from "@/lib/vehicles";
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  PointerLockControls (desktop)
@@ -126,7 +127,7 @@ const WEAPON_CFG:{[k in WeaponType]:{dmg:number;rate:number;spread:number;maxAmm
 // ─────────────────────────────────────────────────────────────────────────────
 const TSIZE=600;const TSEGS=110;const NPC_COUNT=16;const RAIN_COUNT=1800;
 const DAY_SPEED=0.000055;const GRAVITY=-22;const JUMP_VEL=9;
-const DET_RANGE=32;const ATK_RANGE=5;const BASE_SPD=11;const SPRINT_M=2.1;
+const DET_RANGE=0;const ATK_RANGE=5;const BASE_SPD=11;const SPRINT_M=2.1; // NPCs ab combat nahi kartay — sirf ambient pedestrians hain (driving game)
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Component
@@ -1248,7 +1249,12 @@ export default function World(){
 
     // ── Car ────────────────────────────────────────────────────────────────
     const carY=getH(csx,csz); // csx,csz already defined above (home door-front point)
-    const carBodyM=new THREE.MeshPhysicalMaterial({color:cfg.id==="multan"?0xa56a2a:cfg.id==="karachi"?0x214d8f:0x4a5664,roughness:0.35,metalness:0.65,clearcoat:0.8,clearcoatRoughness:0.15});
+    // ══ Active vehicle (VehicleSystem) — Phase 3 mein dealership se selection aayegi, abhi default ══
+    const activeVehicleDef=getVehicle(VEHICLES[0].id);
+    const activeVehicleStats=applyMods(activeVehicleDef.baseStats,DEFAULT_MODS);
+    const vehiclePhysics=toArcadePhysics(activeVehicleStats);
+
+    const carBodyM=new THREE.MeshPhysicalMaterial({color:DEFAULT_MODS.paintColor,roughness:DEFAULT_MODS.finish==="matte"?0.75:0.35,metalness:0.65,clearcoat:DEFAULT_MODS.finish==="gloss"?0.9:0.3,clearcoatRoughness:0.15});
     const carGlassM=new THREE.MeshStandardMaterial({color:0x91b6d8,transparent:true,opacity:0.55,roughness:0.12,metalness:0.08});
     const wheelM2=new THREE.MeshLambertMaterial({color:0x222222});
     const carGroup=new THREE.Group();
@@ -1314,11 +1320,10 @@ export default function World(){
     const zoneWall=new THREE.Mesh(new THREE.CylinderGeometry(zoneRadiusRef.current,zoneRadiusRef.current,80,80,1,true),zoneWallMat);
     zoneWall.position.y=40;scene.add(zoneWall);
 
-    // ── Weapon pickups ────────────────────────────────────────────────────
-    const wTypes:WeaponType[]=["pistol","ak47","shotgun","sniper","ak47","pistol","shotgun","sniper","ak47","pistol"];
-    const wPositions=[[18,25],[-22,15],[40,-30],[-35,45],[55,55],[-55,-50],[80,0],[0,80],[30,60],[-60,30]];
+    // ── Weapon pickups — driving game hai, ab weapons spawn nahi hotay ──────
+    const wPositions:[number,number][]=[]; // khali rakha (Phase 1: shooter mechanics hata diye)
     wPositions.forEach(([px,pz],i)=>{
-      const wt=wTypes[i%wTypes.length];const wcfg=WEAPON_CFG[wt];
+      const wt="pistol" as WeaponType;const wcfg=WEAPON_CFG[wt];
       const g=new THREE.Group();
       const body=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.09,0.44),new THREE.MeshStandardMaterial({color:wcfg.col,roughness:0.45,metalness:0.5}));
       body.castShadow=false;g.add(body);
@@ -1430,7 +1435,7 @@ export default function World(){
     const onKeyUp=(e:KeyboardEvent)=>{keysRef.current[e.code]=false;};
     const onClick=()=>{
       if(isMobileLocal)return;
-      if(!controls.isLocked)controls.lock();else if(!inCarRef.current)shoot();
+      if(!controls.isLocked)controls.lock(); // shoot() hata diya — ab ye driving game hai, shooter nahi
     };
     document.addEventListener("keydown",onKeyDown);document.addEventListener("keyup",onKeyUp);
     renderer.domElement.addEventListener("click",onClick);
@@ -1660,14 +1665,14 @@ export default function World(){
         const throttle=(K["KeyW"]||K["ArrowUp"]?1:0)-(K["KeyS"]||K["ArrowDown"]?0.7:0);
         const steerInput=(K["KeyA"]||K["ArrowLeft"]?1:0)-(K["KeyD"]||K["ArrowRight"]?1:0);
         const speed=Math.abs(car.vel);
-        car.vel+=throttle*(12.5-speed*0.18)*dt;
-        if(K["Space"]) car.vel*=0.93;
-        car.vel*=weatherRef.current==="storm"?0.985:weatherRef.current==="rain"?0.99:0.992;
-        car.vel=Math.max(-6,Math.min(28,car.vel));
+        car.vel+=throttle*(vehiclePhysics.accelForce-speed*0.18)*dt;
+        if(K["Space"]) car.vel*=vehiclePhysics.brakeForce;
+        car.vel*=weatherRef.current==="storm"?vehiclePhysics.massDrag-0.007:weatherRef.current==="rain"?vehiclePhysics.massDrag-0.002:vehiclePhysics.massDrag;
+        car.vel=Math.max(-vehiclePhysics.maxFwd*0.35,Math.min(vehiclePhysics.maxFwd,car.vel));
         car.steer += (steerInput-car.steer)*Math.min(1,dt*5.5);
-        const steerRate=(2.7-(Math.min(24,Math.abs(car.vel))*0.07))*dt;
+        const steerRate=(vehiclePhysics.turnRate-(Math.min(24,Math.abs(car.vel))*0.07))*dt;
         car.heading += car.steer*steerRate*(car.vel>=0?1:-1);
-        const slip=0.86+Math.min(0.12,Math.abs(car.vel)*0.004);
+        const slip=vehiclePhysics.gripSlip+Math.min(0.12,Math.abs(car.vel)*0.004);
         car.group.position.x+=Math.sin(car.heading)*car.vel*dt*slip;
         car.group.position.z+=Math.cos(car.heading)*car.vel*dt*slip;
         car.group.position.x=Math.max(-265,Math.min(265,car.group.position.x));
