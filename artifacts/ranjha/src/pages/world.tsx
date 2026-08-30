@@ -57,6 +57,9 @@ const MAPS:MapConfig[]=[
   {id:"karachi",name:"Karachi Coast",emoji:"🌊",desc:"Ocean waves, beach, modern ruins, coastal battle royale",
    skyDay:new THREE.Color(0x88bbdd),fogDensity:0.005,biome:"coastal",sunColor:0xffffff,ambientHex:0x99aabb,groundHex:0xd4c090,
    skinTone:0xc09060,shirtColor:0x2a4488,pantsColor:0x1a2236},
+  {id:"islamabad",name:"Margalla Hills",emoji:"🕌",desc:"Capital city — wide boulevards, Faisal Masjid, green parks under the hills",
+   skyDay:new THREE.Color(0x7fb0e0),fogDensity:0.004,biome:"capital",sunColor:0xfff2d8,ambientHex:0x8fae8f,groundHex:0x4a7a3a,
+   skinTone:0xc4986a,shirtColor:0x3a5a3a,pantsColor:0x2a2a2a},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -237,7 +240,7 @@ export default function World(){
     const camera=new THREE.PerspectiveCamera(72,container.clientWidth/container.clientHeight,0.2,farPlane);
 
     // ── Home spawn point (per map) — player match shuru hotay hi ghar ke andar spawn hota hai ──
-    const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85]};
+    const carSpawns:{[k:string]:[number,number]}={hunza:[15,-40],lahore:[25,-25],multan:[-18,30],karachi:[35,-85],islamabad:[20,-30]};
     const [csx,csz]=carSpawns[cfg.id]||[20,-20];
     const homeCX=csx,homeCZ=csz-5; // home center thora peeche, darwaza car ki taraf (+z) khulta hai
     camera.position.set(homeCX,getH(homeCX,homeCZ)+1.9,homeCZ); // ghar ke andar, beech mein (deewaron se clash nahi hoga)
@@ -277,6 +280,9 @@ export default function World(){
         case"lahore":{const nx=x/500,nz=z/500;return noise2D(nx*4,nz*4)*1.8+noise2D(nx*10,nz*10)*0.8+3.5;}
         case"multan":{const nx=x/400,nz=z/400;const d=noise2D(nx*1.8,nz*1.8)*0.55+noise2D(nx*3.5,nz*3.5)*0.28+noise2D(nx*9,nz*9)*0.1;return(d*0.5+0.5)*22+1;}
         case"karachi":{const nx=x/600,nz=z/600;return Math.max(-1,noise2D(nx*8,nz*8)*1.2+noise2D(nx*20,nz*20)*0.4+2.5+(z<-80?(z+80)*0.03:0));}
+        case"islamabad":{const nx=x/500,nz=z/500;const flat=noise2D(nx*3,nz*3)*0.6+noise2D(nx*8,nz*8)*0.25;
+          const hills=z>90?Math.pow(Math.max(0,(z-90)/90),1.3)*60+noise2D(nx*2,nz*2)*8:0;
+          return flat+hills+1.5;}
         default:return 0;
       }
     }
@@ -355,6 +361,7 @@ export default function World(){
         lahore:{wall:0xaa3322,roof:0x6b3320,door:0x5a3018},
         multan:{wall:0xd4a84b,roof:0xb08030,door:0x5a3a1a},
         karachi:{wall:0xe0d8c8,roof:0x8899aa,door:0x40342a},
+        islamabad:{wall:0xe8e4d8,roof:0xc84040,door:0x3a2818},
       };
       const hs=HOME_STYLE[cfg.id]||HOME_STYLE.lahore;
       const wallM=new THREE.MeshLambertMaterial({color:hs.wall});
@@ -612,12 +619,106 @@ export default function World(){
     }else if(cfg.id==="lahore"){
       const brickM=new THREE.MeshLambertMaterial({color:0xaa3322});
       const mortarM=new THREE.MeshLambertMaterial({color:0xccaa88});
-      [[20,20,18,9,1.5],[20,20,1.5,9,18],[-20,-20,18,9,1.5],[-20,-20,1.5,9,18],
-       [55,10,16,7,1.5],[55,10,1.5,7,16],[-50,-15,14,8,1.5],[-50,-15,1.5,8,14],
-       [80,50,12,6,1.5],[80,50,1.5,6,12],[-80,-40,15,7,1.5],[-80,-40,1.5,7,15],
-      ].forEach(([x,z,w,h,d])=>{const by=getH(x,z);const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),brickM);m.position.set(x,by+h/2,z);m.castShadow=!isMobileLocal;scene.add(m);bldBoxes.push(new THREE.Box3().setFromObject(m));});
-      // Mughal arches
-      [[0,0],[30,0],[-30,0],[0,30],[0,-30],[50,50],[-50,-50],[70,-20],[-20,70]].forEach(([ax,az])=>{
+      const marbleM=new THREE.MeshLambertMaterial({color:0xe8ddc8});
+      const domeM=new THREE.MeshLambertMaterial({color:0xf0ead8});
+      const pathM=new THREE.MeshLambertMaterial({color:0xc8a878});
+      const grassM=new THREE.MeshLambertMaterial({color:0x4a7a2a});
+
+      // ══ Badshahi Mosque — video se mila layout: bara courtyard, 3 gumbad, 4 minaret ══
+      // Poora mosque solid/non-enterable hai (sirf bahir se dekh saktay hain, andar nahi ja saktay)
+      const mosqueCX=-40,mosqueCZ=55,mosqueW=46,mosqueD=34;
+      {
+        const my=getH(mosqueCX,mosqueCZ);
+        const wallH=6;
+        // Bahir ki chardiwari (poori tarah solid — koi darwaza nahi, andar nahi ja saktay)
+        const outerWall=new THREE.Mesh(new THREE.BoxGeometry(mosqueW,wallH,mosqueD),brickM);
+        outerWall.position.set(mosqueCX,my+wallH/2,mosqueCZ);outerWall.castShadow=!isMobileLocal;scene.add(outerWall);
+        bldBoxes.push(new THREE.Box3().setFromObject(outerWall));
+        // Prayer hall block (courtyard ke south end mein, jahan gumbad hain)
+        const hallW=mosqueW*0.55,hallD=8,hallH=9;
+        const hall=new THREE.Mesh(new THREE.BoxGeometry(hallW,hallH,hallD),marbleM);
+        hall.position.set(mosqueCX,my+wallH+hallH/2,mosqueCZ-mosqueD/2+hallD/2+1);hall.castShadow=!isMobileLocal;scene.add(hall);
+        // 3 safed gumbad (domes)
+        [-hallW/3,0,hallW/3].forEach(dx=>{
+          const dome=new THREE.Mesh(new THREE.SphereGeometry(3.2,12,8,0,Math.PI*2,0,Math.PI/1.9),domeM);
+          dome.position.set(mosqueCX+dx,my+wallH+hallH+1.5,mosqueCZ-mosqueD/2+hallD/2+1);scene.add(dome);
+        });
+        // 4 corner minaret (lambe pointed towers)
+        [[-mosqueW/2+2,-mosqueD/2+2],[mosqueW/2-2,-mosqueD/2+2],[-mosqueW/2+2,mosqueD/2-2],[mosqueW/2-2,mosqueD/2-2]].forEach(([mx,mz])=>{
+          const minH=22;
+          const minaret=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.7,minH,10),marbleM);
+          minaret.position.set(mosqueCX+mx,my+minH/2,mosqueCZ+mz);minaret.castShadow=!isMobileLocal;scene.add(minaret);
+          const cap=new THREE.Mesh(new THREE.ConeGeometry(1.7,2.5,10),domeM);
+          cap.position.set(mosqueCX+mx,my+minH+1.25,mosqueCZ+mz);scene.add(cap);
+          bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(mosqueCX+mx,my+minH/2,mosqueCZ+mz),new THREE.Vector3(3.4,minH,3.4)));
+        });
+        civilianPositions.push({x:mosqueCX,z:mosqueCZ+mosqueD/2+4});
+      }
+
+      // ══ Hazuri Bagh — mosque ke bahar, cross-pattern (X) pathways wala bagh ══
+      const bagCX=-40,bagCZ=10,bagSize=34;
+      {
+        const by=getH(bagCX,bagCZ);
+        const floor=new THREE.Mesh(new THREE.BoxGeometry(bagSize,0.1,bagSize),grassM);
+        floor.position.set(bagCX,by+0.05,bagCZ);scene.add(floor);
+        // X (cross) pathways — 4 diagonal + 2 seedhi lakeerein
+        const mkPath=(w:number,d:number,rot:number,ox:number,oz:number)=>{
+          const p=new THREE.Mesh(new THREE.BoxGeometry(w,0.12,d),pathM);
+          p.position.set(bagCX+ox,by+0.1,bagCZ+oz);p.rotation.y=rot;scene.add(p);
+        };
+        mkPath(bagSize,4,0,0,0); // seedha (north-south... yahan x-axis wide)
+        mkPath(4,bagSize,0,0,0); // seedha (z-axis)
+        mkPath(bagSize*1.3,4,Math.PI/4,0,0); // diagonal 1
+        mkPath(bagSize*1.3,4,-Math.PI/4,0,0); // diagonal 2
+        // Beech mein Hazuri Bagh Baradari (chota marble pavilion)
+        const pavH=3.5;
+        const pav=new THREE.Mesh(new THREE.BoxGeometry(6,pavH,6),marbleM);
+        pav.position.set(bagCX,by+pavH/2,bagCZ);pav.castShadow=!isMobileLocal;scene.add(pav);
+        const pavRoof=new THREE.Mesh(new THREE.ConeGeometry(4.5,2,4),domeM);
+        pavRoof.position.set(bagCX,by+pavH+1,bagCZ);pavRoof.rotation.y=Math.PI/4;scene.add(pavRoof);
+        bldBoxes.push(new THREE.Box3().setFromObject(pav));
+        civilianPositions.push({x:bagCX+6,z:bagCZ+6});civilianPositions.push({x:bagCX-6,z:bagCZ-6});
+      }
+
+      // ══ Lahore Fort — Alamgiri Gate + deewaren (bagh ke doosri taraf) ══
+      const fortCX=-40,fortCZ=-30;
+      {
+        const by=getH(fortCX,fortCZ);
+        const gateH=16,gateW=10;
+        const gateArch=new THREE.Group();
+        const lp=new THREE.Mesh(new THREE.CylinderGeometry(3,3.2,gateH,10),brickM);lp.position.set(-gateW/2,gateH/2,0);
+        const rp=new THREE.Mesh(new THREE.CylinderGeometry(3,3.2,gateH,10),brickM);rp.position.set(gateW/2,gateH/2,0);
+        const domeL=new THREE.Mesh(new THREE.SphereGeometry(3,10,6,0,Math.PI*2,0,Math.PI/2),domeM);domeL.position.set(-gateW/2,gateH,0);
+        const domeR=new THREE.Mesh(new THREE.SphereGeometry(3,10,6,0,Math.PI*2,0,Math.PI/2),domeM);domeR.position.set(gateW/2,gateH,0);
+        const lintel=new THREE.Mesh(new THREE.BoxGeometry(gateW+6,3,4),brickM);lintel.position.set(0,gateH-1,0);
+        gateArch.add(lp,rp,domeL,domeR,lintel);gateArch.position.set(fortCX,by,fortCZ);scene.add(gateArch);
+        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(fortCX,by+gateH/2,fortCZ),new THREE.Vector3(gateW+8,gateH,6)));
+        // Fort ki lambi deewar (dono taraf)
+        [-1,1].forEach(side=>{
+          const wallLen=40;
+          const wall=new THREE.Mesh(new THREE.BoxGeometry(wallLen,12,3),brickM);
+          wall.position.set(fortCX+side*(gateW/2+8+wallLen/2),by+6,fortCZ);wall.castShadow=!isMobileLocal;scene.add(wall);
+          bldBoxes.push(new THREE.Box3().setFromObject(wall));
+        });
+        civilianPositions.push({x:fortCX,z:fortCZ+8});
+      }
+
+      // ══ Food Street — Fort ki deewar ke saath, dono taraf restaurant buildings ══
+      {
+        const fsZ=fortCZ-14; // fort ki deewar ke bilkul saath
+        for(let i=0;i<6;i++){
+          const fx=fortCX+18+i*7;
+          const by=getH(fx,fsZ);
+          const h=5+Math.random()*3;
+          const bld=new THREE.Mesh(new THREE.BoxGeometry(6,h,6),brickM);
+          bld.position.set(fx,by+h/2,fsZ);bld.castShadow=!isMobileLocal;scene.add(bld);
+          bldBoxes.push(new THREE.Box3().setFromObject(bld));
+          civilianPositions.push({x:fx,z:fsZ+4+Math.random()*2});
+        }
+      }
+
+      // Chota bakhera (misc) arches — baaki khuli jaga mein ambience ke liye
+      [[40,40],[60,-10]].forEach(([ax,az])=>{
         const by=getH(ax,az);const archG=new THREE.Group();
         const ph=7,pw=1.5,ad=5;
         const lp=new THREE.Mesh(new THREE.BoxGeometry(pw,ph,pw),brickM);lp.position.set(-ad/2,ph/2,0);
@@ -629,16 +730,7 @@ export default function World(){
         bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(ax,by+ph/2,az),new THREE.Vector3(ad+2,ph,pw+2)));
         civilianPositions.push({x:ax+(Math.random()-0.5)*6,z:az+3+Math.random()*2});
       });
-      // Fort towers
-      [[-20,-20],[20,20],[-50,-15],[55,10]].forEach(([tx,tz])=>{
-        const by=getH(tx,tz);const tw=8,th=14;
-        const tower=new THREE.Mesh(new THREE.CylinderGeometry(tw/2,tw/2+0.5,th,8),brickM);
-        tower.position.set(tx,by+th/2,tz);tower.castShadow=!isMobileLocal;scene.add(tower);
-        for(let b=0;b<8;b++){const bA=b*(Math.PI*2/8);const batt=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.5,1.5),brickM);
-          batt.position.set(tx+Math.cos(bA)*(tw/2-0.2),by+th+1.25,tz+Math.sin(bA)*(tw/2-0.2));scene.add(batt);}
-        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(tx,by+th/2,tz),new THREE.Vector3(tw,th,tw)));
-        civilianPositions.push({x:tx+tw/2+1,z:tz});
-      });
+
       // Overgrown vines
       const vineM=new THREE.MeshLambertMaterial({color:0x2a5e18,transparent:true,opacity:0.85});
       for(let i=0;i<40;i++){const px=(Math.random()-0.5)*220,pz=(Math.random()-0.5)*220;
@@ -646,22 +738,151 @@ export default function World(){
         vine.position.set(px,getH(px,pz)+0.5,pz);vine.rotation.y=Math.random()*Math.PI;scene.add(vine);}
     }else if(cfg.id==="multan"){
       const adobeM=new THREE.MeshLambertMaterial({color:0xc8a060});
-      [[10,30],[-25,-20],[50,-15],[-40,40],[0,65],[70,25],[-60,-10],[30,-65],[-15,-75],[55,60]].forEach(([dx,dz])=>{
-        const by=getH(dx,dz);const cylH=4+Math.random()*3;
-        const body=new THREE.Mesh(new THREE.CylinderGeometry(3.5,4,cylH,8),adobeM);
-        body.position.set(dx,by+cylH/2,dz);body.castShadow=!isMobileLocal;scene.add(body);
-        const dome=new THREE.Mesh(new THREE.SphereGeometry(3.5,8,4,0,Math.PI*2,0,Math.PI/2),adobeM);
-        dome.position.set(dx,by+cylH,dz);scene.add(dome);
-        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(dx,by+cylH/2,dz),new THREE.Vector3(8,cylH+3.5,8)));
-        civilianPositions.push({x:dx+3+Math.random()*2,z:dz+Math.random()*3});
-      });
-      [[25,0,12,3.5,1.2],[-30,10,10,4,1.2],[0,-35,14,3,1.2],[40,-40,8,4,1.2],
-       [-50,25,9,3.5,1.2],[0,50,11,3,1.2]].forEach(([x,z,w,h,d])=>{
-        const by=getH(x,z);const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),adobeM);
-        m.position.set(x,by+h/2,z);m.rotation.y=Math.random()*0.3-0.15;scene.add(m);
-        bldBoxes.push(new THREE.Box3().setFromObject(m));
-        civilianPositions.push({x:x+(Math.random()-0.5)*4,z:z+d/2+1});
-      });
+      const shrineM=new THREE.MeshLambertMaterial({color:0xd8c8a8});
+      const tileM=new THREE.MeshLambertMaterial({color:0x2288aa});
+
+      // ══ Purani shehar — dense, tang galiyan, ghar bilkul sath-sath (organic, no-grid) ══
+      let seedA=1;const jrand=()=>{seedA=(seedA*9301+49297)%233280;return seedA/233280;};
+      for(let ring=0;ring<5;ring++){
+        const count=8+ring*4,radius=15+ring*13;
+        for(let i=0;i<count;i++){
+          const a=(i/count)*Math.PI*2+jrand()*0.3;
+          const dx=Math.cos(a)*radius+(jrand()-0.5)*6,dz=Math.sin(a)*radius+(jrand()-0.5)*6;
+          if(Math.abs(dx-homeCX)<8&&Math.abs(dz-homeCZ)<8)continue; // home ke pass building na banao
+          const by=getH(dx,dz);const h=3+jrand()*3.5;
+          const w=3+jrand()*2.5,d=3+jrand()*2.5;
+          const bld=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),adobeM);
+          bld.position.set(dx,by+h/2,dz);bld.rotation.y=jrand()*Math.PI*2;bld.castShadow=!isMobileLocal;scene.add(bld);
+          bldBoxes.push(new THREE.Box3().setFromObject(bld));
+          if(jrand()<0.4)civilianPositions.push({x:dx+(jrand()-0.5)*4,z:dz+(jrand()-0.5)*4});
+        }
+      }
+
+      // ══ Sufi shrine (Multan = "City of Saints") — nili tile ka gumbad, landmark ══
+      const shrineCX=0,shrineCZ=0;
+      {
+        const my=getH(shrineCX,shrineCZ);
+        const base=new THREE.Mesh(new THREE.CylinderGeometry(9,10,8,10),shrineM);
+        base.position.set(shrineCX,my+4,shrineCZ);base.castShadow=!isMobileLocal;scene.add(base);
+        const dome=new THREE.Mesh(new THREE.SphereGeometry(8.5,14,10,0,Math.PI*2,0,Math.PI/1.9),tileM);
+        dome.position.set(shrineCX,my+8+6,shrineCZ);dome.castShadow=!isMobileLocal;scene.add(dome);
+        const finial=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3,6),new THREE.MeshLambertMaterial({color:0xd4af37}));
+        finial.position.set(shrineCX,my+8+12,shrineCZ);scene.add(finial);
+        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(shrineCX,my+8,shrineCZ),new THREE.Vector3(20,16,20)));
+        civilianPositions.push({x:shrineCX+12,z:shrineCZ+12});civilianPositions.push({x:shrineCX-12,z:shrineCZ-12});
+      }
+    }else if(cfg.id==="karachi"){
+      const marbleM=new THREE.MeshLambertMaterial({color:0xe8ded0});
+      const domeM=new THREE.MeshLambertMaterial({color:0xf0ead8});
+      const grassM=new THREE.MeshLambertMaterial({color:0x4a8e2a});
+      const pathM=new THREE.MeshLambertMaterial({color:0xc8b898});
+      const concreteKM=new THREE.MeshLambertMaterial({color:0xd8d0c0});
+      const roofKM=new THREE.MeshLambertMaterial({color:0x8899aa});
+      const boatM=new THREE.MeshLambertMaterial({color:0xffffff});
+      const boatStripeM=new THREE.MeshLambertMaterial({color:0xdd4422});
+
+      // ══ Mazar-e-Quaid — star-shape marble platform, beech mein gumbad ══
+      const mazCX=0,mazCZ=50;
+      {
+        const my=getH(mazCX,mazCZ);
+        const platform=new THREE.Mesh(new THREE.CylinderGeometry(16,17,3,8),marbleM);
+        platform.position.set(mazCX,my+1.5,mazCZ);platform.castShadow=!isMobileLocal;scene.add(platform);
+        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(mazCX,my+1.5,mazCZ),new THREE.Vector3(34,3,34)));
+        const dome=new THREE.Mesh(new THREE.SphereGeometry(7,14,10,0,Math.PI*2,0,Math.PI/1.8),domeM);
+        dome.position.set(mazCX,my+3+6,mazCZ);dome.castShadow=!isMobileLocal;scene.add(dome);
+        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(mazCX,my+7,mazCZ),new THREE.Vector3(14,14,14)));
+        const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,10,6),new THREE.MeshLambertMaterial({color:0x888888}));
+        pole.position.set(mazCX,my+3+10,mazCZ+20);scene.add(pole);
+        [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([sx,sz])=>{
+          const lawn=new THREE.Mesh(new THREE.BoxGeometry(14,0.1,14),grassM);
+          lawn.position.set(mazCX+sx*22,my+0.05,mazCZ+sz*22);scene.add(lawn);
+        });
+        const p1=new THREE.Mesh(new THREE.BoxGeometry(60,0.12,4),pathM);p1.position.set(mazCX,my+0.1,mazCZ);scene.add(p1);
+        const p2=new THREE.Mesh(new THREE.BoxGeometry(4,0.12,60),pathM);p2.position.set(mazCX,my+0.1,mazCZ);scene.add(p2);
+        civilianPositions.push({x:mazCX+18,z:mazCZ+18});civilianPositions.push({x:mazCX-18,z:mazCZ-18});
+      }
+
+      // ══ Clifton / DHA — grid-pattern blocks, coast ke qareeb ══
+      const gridOX=-55,gridOZ=-35;
+      for(let row=0;row<3;row++){
+        for(let col=0;col<3;col++){
+          const bx=gridOX+col*16,bz=gridOZ+row*16;
+          if(Math.random()<0.15)continue;
+          const by=getH(bx,bz);const h=6+Math.random()*8;
+          const bld=new THREE.Mesh(new THREE.BoxGeometry(9,h,9),concreteKM);
+          bld.position.set(bx,by+h/2,bz);bld.castShadow=!isMobileLocal;scene.add(bld);
+          const roof=new THREE.Mesh(new THREE.BoxGeometry(9.3,0.5,9.3),roofKM);
+          roof.position.set(bx,by+h+0.25,bz);scene.add(roof);
+          bldBoxes.push(new THREE.Box3().setFromObject(bld));
+          civilianPositions.push({x:bx+5,z:bz+5});
+        }
+      }
+
+      // ══ Sea View kashti-shape (boat) landmark — beach ke kinare ══
+      {
+        const boatCX=-70,boatCZ=-72;
+        const by=getH(boatCX,boatCZ);
+        const hull=new THREE.Mesh(new THREE.ConeGeometry(9,20,3),boatM);
+        hull.rotation.x=Math.PI/2;hull.rotation.y=Math.PI/6;
+        hull.position.set(boatCX,by+2,boatCZ);hull.castShadow=!isMobileLocal;scene.add(hull);
+        const stripe=new THREE.Mesh(new THREE.CylinderGeometry(6,6,1.5,3,1,true),boatStripeM);
+        stripe.position.set(boatCX,by+1,boatCZ);scene.add(stripe);
+        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(boatCX,by+3,boatCZ),new THREE.Vector3(14,8,20)));
+        civilianPositions.push({x:boatCX+10,z:boatCZ+5});
+      }
+    }else if(cfg.id==="islamabad"){
+      const marbleM=new THREE.MeshLambertMaterial({color:0xf0f0e8});
+      const roofTentM=new THREE.MeshLambertMaterial({color:0xe8e8e0});
+      const curbM=new THREE.MeshLambertMaterial({color:0xf0c840});
+      const roadM2=new THREE.MeshLambertMaterial({color:0x383838});
+      const grassIM=new THREE.MeshLambertMaterial({color:0x4a8a2a});
+
+      // ══ Faisal Masjid — tent-shape roof, 4 minaret, Margalla Hills ke neeche ══
+      const fmCX=0,fmCZ=60;
+      {
+        const my=getH(fmCX,fmCZ);
+        const base=new THREE.Mesh(new THREE.BoxGeometry(30,3,30),marbleM);
+        base.position.set(fmCX,my+1.5,fmCZ);base.castShadow=!isMobileLocal;scene.add(base);
+        // Tent (Bedouin) shape roof — 4 triangular panels ek point ki taraf
+        const roofH=16;
+        const roof=new THREE.Mesh(new THREE.ConeGeometry(15,roofH,4),roofTentM);
+        roof.position.set(fmCX,my+3+roofH/2,fmCZ);roof.rotation.y=Math.PI/4;roof.castShadow=!isMobileLocal;scene.add(roof);
+        bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(fmCX,my+3+roofH/2,fmCZ),new THREE.Vector3(22,roofH+3,22)));
+        // 4 lambe pointed minaret, corners par
+        [[16,16],[-16,16],[16,-16],[-16,-16]].forEach(([mx,mz])=>{
+          const minH=30;
+          const minaret=new THREE.Mesh(new THREE.CylinderGeometry(0.9,1.1,minH,8),marbleM);
+          minaret.position.set(fmCX+mx,my+minH/2,fmCZ+mz);minaret.castShadow=!isMobileLocal;scene.add(minaret);
+          const cap=new THREE.Mesh(new THREE.ConeGeometry(1.1,3,8),roofTentM);
+          cap.position.set(fmCX+mx,my+minH+1.5,fmCZ+mz);scene.add(cap);
+          bldBoxes.push(new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(fmCX+mx,my+minH/2,fmCZ+mz),new THREE.Vector3(2.5,minH,2.5)));
+        });
+        civilianPositions.push({x:fmCX+18,z:fmCZ-18});civilianPositions.push({x:fmCX-18,z:fmCZ-18});
+      }
+
+      // ══ Wide boulevard road — kaali-peeli curb, hara median ══
+      {
+        const rz=10;
+        const road=new THREE.Mesh(new THREE.BoxGeometry(140,0.15,14),roadM2);
+        road.position.set(0,getH(0,rz)+0.08,rz);scene.add(road);
+        const median=new THREE.Mesh(new THREE.BoxGeometry(140,0.3,2.5),grassIM);
+        median.position.set(0,getH(0,rz)+0.2,rz);scene.add(median);
+        [-1,1].forEach(side=>{
+          const curb=new THREE.Mesh(new THREE.BoxGeometry(140,0.25,0.6),curbM);
+          curb.position.set(0,getH(0,rz)+0.2,rz+side*7);scene.add(curb);
+        });
+      }
+
+      // ══ F-9 Park — organic gol shape, winding paths ══
+      const parkCX=-55,parkCZ=-40;
+      {
+        const my=getH(parkCX,parkCZ);
+        const lawn=new THREE.Mesh(new THREE.CylinderGeometry(28,28,0.15,20),grassIM);
+        lawn.position.set(parkCX,my+0.08,parkCZ);scene.add(lawn);
+        const track=new THREE.Mesh(new THREE.RingGeometry(20,21.5,24),new THREE.MeshLambertMaterial({color:0xc8b898}));
+        track.rotation.x=-Math.PI/2;track.position.set(parkCX,my+0.15,parkCZ);scene.add(track);
+        civilianPositions.push({x:parkCX+15,z:parkCZ+5});civilianPositions.push({x:parkCX-10,z:parkCZ-15});
+      }
     }else{
       const concreteM=new THREE.MeshLambertMaterial({color:0xb0b8c0});
       const glassM=new THREE.MeshLambertMaterial({color:0x4477aa,transparent:true,opacity:0.7});
@@ -697,7 +918,7 @@ export default function World(){
 
     // ── Trees ─────────────────────────────────────────────────────────────
     const trunkM=new THREE.MeshLambertMaterial({color:0x5c3d1a});
-    const leafColors:{[k:string]:number}={hunza:0x2a5a2c,lahore:0x3a6e1a,multan:0xaa8833,karachi:0x4a8e22};
+    const leafColors:{[k:string]:number}={hunza:0x2a5a2c,lahore:0x3a6e1a,multan:0xaa8833,karachi:0x4a8e22,islamabad:0x2a6e1a};
     const leafM=new THREE.MeshLambertMaterial({color:leafColors[cfg.id]||0x3a6e1a});
     for(let i=0;i<(cfg.id==="multan"?30:80);i++){
       const a=Math.random()*Math.PI*2,dist=20+Math.random()*(cfg.id==="hunza"?80:180);
