@@ -1315,9 +1315,10 @@ export default function World(){
     // ── Safe zone ring ────────────────────────────────────────────────────
     const zoneRingMat=new THREE.MeshBasicMaterial({color:0x22aaff,transparent:true,opacity:0.5,side:THREE.DoubleSide});
     const zoneRingGeo=new THREE.TorusGeometry(zoneRadiusRef.current,1.5,8,80);
-    const zoneRing=new THREE.Mesh(zoneRingGeo,zoneRingMat);zoneRing.rotation.x=Math.PI/2;zoneRing.position.y=2;scene.add(zoneRing);
+    const zoneRing=new THREE.Mesh(zoneRingGeo,zoneRingMat);zoneRing.rotation.x=Math.PI/2;zoneRing.position.y=2;zoneRing.visible=false;scene.add(zoneRing);
     const zoneWallMat=new THREE.MeshBasicMaterial({color:0x2255ff,transparent:true,opacity:0.06,side:THREE.DoubleSide});
     const zoneWall=new THREE.Mesh(new THREE.CylinderGeometry(zoneRadiusRef.current,zoneRadiusRef.current,80,80,1,true),zoneWallMat);
+    zoneWall.visible=false; // battle royale zone hata diya — driving game hai
     zoneWall.position.y=40;scene.add(zoneWall);
 
     // ── Weapon pickups — driving game hai, ab weapons spawn nahi hotay ──────
@@ -1576,11 +1577,10 @@ export default function World(){
         zoneWall.geometry=new THREE.CylinderGeometry(zoneRadiusRef.current,zoneRadiusRef.current,80,80,1,true);
         void wScale;
       }
-      const playerDist2D=Math.sqrt(camera.position.x*camera.position.x+camera.position.z*camera.position.z);
-      const isOutside=playerDist2D>zoneRadiusRef.current;
-      setOutsideZone(isOutside);
-      if(isOutside){zoneDmgTimer+=dt;if(zoneDmgTimer>=1.2){zoneDmgTimer=0;
-        const zoneDmg=2+Math.floor((playerDist2D-zoneRadiusRef.current)*0.08);
+      // Zone shrink/damage disabled — driving game hai, battle royale nahi
+      const isOutside=false;
+      if(false){zoneDmgTimer+=dt;if(zoneDmgTimer>=1.2){zoneDmgTimer=0;
+        const zoneDmg=2+Math.floor((0)*0.08);
         if(shieldRef.current>0){const absorbed=Math.min(shieldRef.current,zoneDmg);shieldRef.current=Math.max(0,shieldRef.current-absorbed);setShield(shieldRef.current);const rem=zoneDmg-absorbed;if(rem>0){hpRef.current=Math.max(0,hpRef.current-rem);setHp(hpRef.current);}}
         else{hpRef.current=Math.max(0,hpRef.current-zoneDmg);setHp(hpRef.current);}
       }}else{zoneDmgTimer=0;}
@@ -1662,8 +1662,14 @@ export default function World(){
       // ── Car physics ──────────────────────────────────────────────────────
       const K=keysRef.current;
       if(car&&inCarRef.current){
-        const throttle=(K["KeyW"]||K["ArrowUp"]?1:0)-(K["KeyS"]||K["ArrowDown"]?0.7:0);
-        const steerInput=(K["KeyA"]||K["ArrowLeft"]?1:0)-(K["KeyD"]||K["ArrowRight"]?1:0);
+        let throttle=(K["KeyW"]||K["ArrowUp"]?1:0)-(K["KeyS"]||K["ArrowDown"]?0.7:0);
+        let steerInput=(K["KeyA"]||K["ArrowLeft"]?1:0)-(K["KeyD"]||K["ArrowRight"]?1:0);
+        if(isMobileLocal){
+          // Mobile: wahi left joystick ab driving steering-wheel + gas/brake ki tarah kaam karta hai
+          const jx=jsDx.current/52,jz=jsDy.current/52;
+          if(Math.abs(jz)>0.08)throttle=-jz*(jz<0?1:0.7);
+          if(Math.abs(jx)>0.08)steerInput=-jx;
+        }
         const speed=Math.abs(car.vel);
         car.vel+=throttle*(vehiclePhysics.accelForce-speed*0.18)*dt;
         if(K["Space"]) car.vel*=vehiclePhysics.brakeForce;
@@ -1988,22 +1994,10 @@ export default function World(){
               <span className="text-sm">{weatherIcon}</span>
               <span className={`font-display text-xs font-bold uppercase tracking-wider ${timeColor}`}>{timeLabel}</span>
             </div>
-            <div className={`px-3 py-1 rounded-lg backdrop-blur-md font-display text-[10px] uppercase tracking-widest flex items-center gap-1.5 ${outsideZone?"bg-blue-500/30 border border-blue-400/70 text-blue-200 animate-pulse":"bg-black/55 border border-blue-400/25 text-blue-400/70"}`}>
-              <span>⬟</span><span>Zone {zoneRadius}m</span>
-              {outsideZone&&<span className="font-bold text-blue-100">— OUTSIDE!</span>}
-            </div>
+            {/* Zone indicator hidden — battle royale zone system disabled */}
           </div>
 
-          {/* Kills + combo */}
-          <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-2">
-            <div className="px-2.5 py-1.5 rounded-lg bg-black/65 border border-amber-500/40 backdrop-blur-md flex items-center gap-2">
-              <span className="text-amber-400 text-[10px] font-display uppercase tracking-widest">Kills</span>
-              <span className="font-display text-xl font-bold text-amber-400 tabular-nums">{kills}</span>
-            </div>
-            {combo>=2&&<div className="px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/50 backdrop-blur-md flex items-center gap-1 animate-pulse">
-              <span className="font-display text-[10px] uppercase text-red-300">x{combo}</span><span>{combo>=5?"🔥":"⚡"}</span>
-            </div>}
-          </div>
+          {/* Combat HUD (Kills/Zone) removed — ye ab driving game hai, battle royale nahi */}
 
           {/* Bottom left — HP/STM/Ammo */}
           <div className={`absolute z-20 space-y-1.5 ${isMobile?"bottom-3 left-1/2 -translate-x-1/2 w-52":"bottom-4 left-4 w-60"}`}>
