@@ -1843,9 +1843,9 @@ export default function World(){
 
   // ── Map select screen ─────────────────────────────────────────────────────
   if(!selectedMap)return(
-    <div className="relative w-full h-screen bg-black overflow-hidden flex flex-col items-center justify-center font-sans select-none">
-      <div className="absolute inset-0 opacity-7" style={{backgroundImage:"linear-gradient(rgba(255,255,255,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.07) 1px,transparent 1px)",backgroundSize:"44px 44px"}}/>
-      <div className="relative z-10 w-full max-w-4xl px-4 text-center">
+    <div className="relative w-full h-screen bg-black overflow-y-auto overflow-x-hidden flex flex-col items-center font-sans select-none">
+      <div className="absolute inset-0 opacity-7 pointer-events-none" style={{backgroundImage:"linear-gradient(rgba(255,255,255,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.07) 1px,transparent 1px)",backgroundSize:"44px 44px"}}/>
+      <div className="relative z-10 w-full max-w-4xl px-4 text-center py-8">
         <div className="text-5xl mb-2">🌍</div>
         <h1 className="font-display text-4xl sm:text-5xl font-bold text-amber-400 mb-1 drop-shadow-[0_0_24px_rgba(244,180,26,0.4)]">Ranjha World</h1>
         <p className="text-white/40 font-display uppercase tracking-widest text-xs sm:text-sm mb-6">{isMobile?"Touch to select battlefield":"Select your battlefield"}</p>
@@ -1870,7 +1870,7 @@ export default function World(){
                 <div className="font-display text-base font-bold text-white uppercase tracking-wider mb-0.5">{m.name}</div>
                 <div className="text-white/40 text-xs leading-relaxed">{m.desc}</div>
                 <div className="flex gap-1 mt-2 flex-wrap">
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-display uppercase tracking-wider bg-blue-500/12 border border-blue-500/25 text-blue-300">{isMobile?"Touch Controls":"Car • Loot • AI"}</span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-display uppercase tracking-wider bg-blue-500/12 border border-blue-500/25 text-blue-300">{isMobile?"Touch Controls":"Drive • Explore"}</span>
                 </div>
               </div>
             </button>

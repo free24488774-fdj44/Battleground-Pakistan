@@ -9,7 +9,7 @@ import { CharacterCard, PetCard, GunCard, MapCard } from "@/components/game/Card
 import { CHARACTERS, PETS, GUNS, MAPS, OUTFITS, SKILLS, MOCK_FRIENDS } from "@/lib/mock-data";
 import { toast } from "@/hooks/use-toast";
 
-type Tab = "Characters" | "Outfits" | "Pets" | "Guns" | "Skills" | "Maps" | "Friends";
+type Tab = "Characters" | "Outfits" | "Pets" | "Guns" | "Skills" | "Maps";
 
 export default function Lobby() {
   const [, setLocation] = useLocation();
@@ -154,7 +154,7 @@ export default function Lobby() {
         <div className="w-full md:w-[450px] lg:w-[600px] flex flex-col gap-4 h-[50vh] md:h-auto pb-4">
           {/* Tabs */}
           <div className="glass-panel p-2 rounded-xl flex overflow-x-auto no-scrollbar gap-2 hide-scroll">
-            {(["Characters", "Outfits", "Pets", "Guns", "Skills", "Maps", "Friends"] as Tab[]).map((tab) => (
+            {(["Characters", "Outfits", "Pets", "Guns", "Skills", "Maps"] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -277,63 +277,6 @@ export default function Lobby() {
                     </div>
                   </div>
                 ))}
-
-                {activeTab === "Friends" && (
-                  <div className="col-span-2 lg:col-span-3 flex flex-col gap-4">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-display uppercase tracking-wider">
-                      <Shield className="w-4 h-4" />
-                      Secure connection — friend data stays on this device
-                    </div>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="Search UID or Name..." 
-                        maxLength={32}
-                        className="flex-1 bg-black/50 border border-white/20 focus:border-primary rounded-lg p-2 text-sm text-white outline-none"
-                        onChange={(e) => {
-                          const cleaned = e.target.value.replace(/[<>'"`;\\]/g, "");
-                          if (cleaned !== e.target.value) e.target.value = cleaned;
-                        }}
-                      />
-                      <button
-                        className="px-4 py-2 bg-primary text-black font-display font-bold rounded-lg text-sm uppercase"
-                        onClick={() => toast({ title: "Search", description: "No matching players found." })}
-                      >
-                        Search
-                      </button>
-                      <button
-                        className="px-4 py-2 bg-accent/20 border border-accent/50 text-accent font-display font-bold rounded-lg text-sm uppercase hover:bg-accent/30 transition-colors"
-                        onClick={copyUid}
-                      >
-                        Share My ID
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      {MOCK_FRIENDS.map(f => (
-                        <div key={f.uid} className="flex items-center justify-between p-3 glass-panel rounded-lg border border-white/5">
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/20">
-                              <img src={f.avatar} alt={f.name} className="w-full h-full object-cover" />
-                              <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${f.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
-                            </div>
-                            <div>
-                              <div className="font-display font-bold text-white text-sm uppercase">{f.name}</div>
-                              <div className="text-[10px] text-white/50">LVL {f.level} · UID {f.uid}</div>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded text-xs font-display uppercase tracking-wider transition-colors"
-                              onClick={() => toast({ title: "Invite Sent", description: `Squad invite sent to ${f.name}.` })}
-                            >
-                              Invite
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
               </motion.div>
             </AnimatePresence>
