@@ -144,6 +144,7 @@ export default function World(){
   const [locked,setLocked]    =useState(false);
   const [playing,setPlaying]  =useState(false); // mobile active state
   const [hp,setHp]            =useState(100);
+  const [carSpeedKmh,setCarSpeedKmh]=useState(0);
   const [ammo,setAmmo]        =useState(30);
   const [stamina,setStamina]  =useState(100);
   const [kills,setKills]      =useState(0);
@@ -1262,6 +1263,7 @@ export default function World(){
       Hatchback:[0.92,1.0,0.82],Sedan:[1,1,1],SUV:[1.08,1.32,1.05],
       Sports:[1.05,0.74,1.12],Muscle:[1.1,0.94,1.15],Pickup:[1.05,1.05,1.32],
       Offroad:[1.06,1.24,1.06],Classic:[0.98,1.08,0.92],
+      Rally:[1.04,0.98,1.08],Electric:[1.02,0.9,1.08],Van:[1.1,1.3,1.28],
     };
     const [csX,csY,csZ]=CATEGORY_SCALE[activeVehicleDef.category]||[1,1,1];
 
@@ -1504,7 +1506,7 @@ export default function World(){
     // ── Game loop ──────────────────────────────────────────────────────────
     const clock=new THREE.Clock();const playerBox=new THREE.Box3();
     let dayTime=0.28;let weatherTimer=40;let dmgTimer=0;let thunderTimer=0;
-    let waterTime=0;let animId:number;let zoneDmgTimer=0;
+    let waterTime=0;let animId:number;let zoneDmgTimer=0;let speedHudAccum=0;
 
     function animate(){
       animId=requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),0.05);
@@ -1704,6 +1706,10 @@ export default function World(){
         car.group.rotation.z=-car.steer*0.05;
         car.group.rotation.x=Math.sin(car.vel*0.02)*0.01;
         camera.position.set(car.group.position.x,car.group.position.y+3.15,car.group.position.z);
+        speedHudAccum+=dt;
+        if(speedHudAccum>0.12){speedHudAccum=0;setCarSpeedKmh(Math.round(Math.abs(car.vel)*11.5));}
+      }else if(inCarRef.current===false){
+        speedHudAccum=0;
       }
 
       // ── Mobile car trigger ───────────────────────────────────────────────
@@ -2014,47 +2020,26 @@ export default function World(){
 
           {/* Combat HUD (Kills/Zone) removed — ye ab driving game hai, battle royale nahi */}
 
-          {/* Bottom left — HP/STM/Ammo */}
+          {/* Bottom left — Driving HUD (speedometer) ya on-foot HP */}
           <div className={`absolute z-20 space-y-1.5 ${isMobile?"bottom-3 left-1/2 -translate-x-1/2 w-52":"bottom-4 left-4 w-60"}`}>
             <div className="rounded-xl bg-black/72 border border-white/10 backdrop-blur-md p-2.5 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-display uppercase tracking-widest text-red-400 w-7">HP</span>
-                <div className="flex-1 h-2.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className={`h-full bg-gradient-to-r ${hpGrad} transition-all duration-300`} style={{width:`${hp}%`}}/>
+              {inCar?(
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🚗</span>
+                  <div className="flex-1">
+                    <div className="font-display text-3xl font-bold tabular-nums text-sky-300 leading-none">{carSpeedKmh}</div>
+                    <div className="font-display text-[9px] uppercase tracking-widest text-white/40">km/h</div>
+                  </div>
                 </div>
-                <span className="font-display text-xs font-bold tabular-nums text-white/75 w-6 text-right">{hp}</span>
-              </div>
-              {!inCar&&<div className="flex items-center gap-2">
-                <span className="text-[9px] font-display uppercase tracking-widest text-sky-400 w-7">STM</span>
-                <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className={`h-full bg-gradient-to-r ${stGrad} transition-all duration-150`} style={{width:`${stamina}%`}}/>
+              ):(
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-display uppercase tracking-widest text-red-400 w-7">HP</span>
+                  <div className="flex-1 h-2.5 rounded-full bg-white/10 overflow-hidden">
+                    <div className={`h-full bg-gradient-to-r ${hpGrad} transition-all duration-300`} style={{width:`${hp}%`}}/>
+                  </div>
+                  <span className="font-display text-xs font-bold tabular-nums text-white/75 w-6 text-right">{hp}</span>
                 </div>
-                <span className="font-display text-[10px] tabular-nums text-white/40 w-6 text-right">{stamina}</span>
-              </div>}
-              {shield>0&&<div className="flex items-center gap-2">
-                <span className="text-[9px] font-display uppercase tracking-widest text-blue-400 w-7">ARM</span>
-                <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-300" style={{width:`${(shield/75)*100}%`}}/>
-                </div>
-                <span className="font-display text-[10px] tabular-nums text-blue-300 w-6 text-right">{shield}</span>
-              </div>}
-              <div className="flex items-center gap-2">
-                {inCar?(<><span className="text-sm">🚗</span><span className="font-display text-base font-bold text-sky-300">Driving</span></>):(<>
-                  <span className="text-sm">🔫</span>
-                  <span className="font-display text-[10px] text-white/50 uppercase tracking-wider">{WEAPON_CFG[weapon].label}</span>
-                  <span className={`font-display text-xl font-bold tabular-nums ml-auto ${ammo<=5?"text-red-400 animate-pulse":"text-amber-300"}`}>{ammo}</span>
-                  <span className="text-white/25 text-xs font-display">/{WEAPON_CFG[weapon].maxAmmo}</span>
-                </>)}
-              </div>
-              {!inCar&&<div className="flex items-center gap-2">
-                <span className="text-[9px] font-display uppercase tracking-widest text-green-400 w-7">GRN</span>
-                <div className="flex gap-1">
-                  {Array.from({length:Math.max(0,grenadeCount)}).map((_,i)=>(
-                    <div key={i} className="w-4 h-4 rounded-full bg-green-500/80 border border-green-400/70 text-center text-[8px] leading-4">💣</div>
-                  ))}
-                  {grenadeCount===0&&<span className="font-display text-[10px] text-white/30">None</span>}
-                </div>
-              </div>}
+              )}
             </div>
           </div>
 
@@ -2067,11 +2052,7 @@ export default function World(){
 
           {notice&&<div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-lg bg-black/82 border border-amber-500/40 backdrop-blur-md font-display text-xs uppercase tracking-widest text-amber-300 text-center">{notice}</div>}
 
-          {/* Legend (desktop only) */}
-          {!isMobile&&<div className="absolute bottom-4 right-4 z-20 space-y-1">
-            {[{col:"bg-orange-500",l:"Shooting"},{col:"bg-orange-400",l:"Chasing"},{col:"bg-yellow-400",l:"Alert"},{col:"bg-red-500",l:"Patrol"},{col:"bg-green-400",l:"Health"}]
-              .map((x,i)=><div key={i} className="flex items-center gap-2 text-[9px] font-display uppercase tracking-widest text-white/35"><div className={`w-2 h-2 rounded-full ${x.col}`}/>{x.l}</div>)}
-          </div>}
+          {/* Legend hataya — combat states ab NPCs ke liye relevant nahi (driving game) */}
         </>
       )}
 

@@ -9,6 +9,21 @@ import { VEHICLES, getVehicle, applyMods, DEFAULT_MODS } from "@/lib/vehicles";
 const PAINT_COLORS = [0x4a5664, 0xdd3322, 0x1a5aa8, 0x2a8a3a, 0xd4af37, 0x0d0d10, 0xe8e0d0, 0x8a3838];
 const WHEEL_COLORS = [0x1a1a1a, 0x888888, 0xd4af37, 0xdd3322];
 
+// Category ke hisab se alag silhouette (Garage preview ab har category ke liye alag dikhta hai)
+const CATEGORY_SILHOUETTE: Record<string, { body: string; cabin: string; wheels: [number, number][] }> = {
+  Hatchback: { body: "M28,60 Q22,38 48,33 L62,20 Q74,14 105,14 L120,20 L126,33 Q158,38 172,52 L174,60 Q174,68 164,68 L36,68 Q28,68 28,60 Z", cabin: "M64,32 L76,21 Q86,17 104,17 L118,22 L120,33 Z", wheels: [[62,68],[142,68]] },
+  Sedan:     { body: "M20,60 Q15,35 45,30 L65,15 Q80,8 120,8 L140,15 Q165,20 180,35 L182,60 Q182,68 172,68 L28,68 Q20,68 20,60 Z", cabin: "M62,30 L78,16 Q90,11 118,11 L134,16 L138,30 Z", wheels: [[55,68],[150,68]] },
+  SUV:       { body: "M18,62 Q16,28 42,26 L58,10 Q70,4 130,4 L146,10 L164,26 Q186,28 186,62 Q186,72 174,72 L28,72 Q18,72 18,62 Z", cabin: "M56,26 L68,12 Q78,8 128,8 L142,12 L150,26 Z", wheels: [[52,72],[154,72]] },
+  Sports:    { body: "M15,62 Q12,48 40,44 L72,16 Q86,10 118,10 L146,20 Q172,30 188,50 L189,62 Q189,68 179,68 L24,68 Q15,68 15,62 Z", cabin: "M68,20 L84,13 Q96,9 114,10 L138,20 L140,32 L66,32 Z", wheels: [[54,68],[158,68]] },
+  Muscle:    { body: "M14,60 Q12,36 44,32 L64,17 Q78,11 122,11 L142,17 L168,32 Q190,36 190,60 Q190,69 178,69 L26,69 Q14,69 14,60 Z", cabin: "M66,31 L80,18 Q90,14 116,14 L132,18 L140,31 Z", wheels: [[52,69],[156,69]] },
+  Pickup:    { body: "M12,62 Q10,36 38,32 L56,16 Q68,10 100,10 L114,16 L120,32 L196,32 L200,62 Q200,70 190,70 L22,70 Q12,70 12,62 Z", cabin: "M54,31 L64,17 Q72,13 96,13 L108,17 L112,31 Z", wheels: [[46,70],[178,70]] },
+  Offroad:   { body: "M16,58 Q14,30 44,27 L60,12 Q72,6 128,6 L146,12 L166,27 Q188,30 188,58 Q188,72 174,72 L30,72 Q16,72 16,58 Z", cabin: "M58,27 L70,13 Q80,9 126,9 L138,13 L148,27 Z", wheels: [[48,72],[156,72]] },
+  Classic:   { body: "M22,60 Q18,38 46,33 L64,19 Q78,13 116,13 L134,19 L156,33 Q180,38 180,60 Q180,68 170,68 L30,68 Q22,68 22,60 Z", cabin: "M62,32 L76,20 Q86,16 114,16 L128,20 L134,32 Z", wheels: [[57,68],[145,68]] },
+  Rally:     { body: "M16,62 Q14,32 44,28 L62,14 Q76,8 130,8 L148,14 L170,28 Q192,32 192,62 Q192,70 180,70 L28,70 Q16,70 16,62 Z", cabin: "M60,28 L72,15 Q82,11 128,11 L140,15 L150,28 Z", wheels: [[50,70],[158,70]] },
+  Electric:  { body: "M18,60 Q14,40 44,35 L64,18 Q78,12 116,12 L136,18 L164,35 Q188,40 188,60 Q188,68 176,68 L30,68 Q18,68 18,60 Z", cabin: "M62,34 L78,19 Q88,15 114,15 L130,19 L142,34 Z", wheels: [[56,68],[150,68]] },
+  Van:       { body: "M14,58 Q12,20 40,18 L44,10 Q48,6 160,6 Q170,6 172,18 Q198,20 198,58 Q198,70 186,70 L26,70 Q14,70 14,58 Z", cabin: "M46,17 L48,9 Q52,7 158,7 L166,17 Z", wheels: [[46,70],[168,70]] },
+};
+
 export default function Garage() {
   const [, setLocation] = useLocation();
   const { profile, selectedVehicleId, ownedVehicleIds, ownsVehicle, selectVehicle, buyVehicle, getVehicleMods, updateVehicleMods } = useGame();
@@ -20,6 +35,7 @@ export default function Garage() {
   const mods = getVehicleMods(viewingId);
   const stats = applyMods(viewing.baseStats, mods);
   const owned = ownsVehicle(viewingId);
+  const sil = CATEGORY_SILHOUETTE[viewing.category] || CATEGORY_SILHOUETTE.Sedan;
 
   const handleBuy = () => {
     const ok = buyVehicle(viewingId, viewing.priceCoins);
@@ -47,7 +63,7 @@ export default function Garage() {
           </button>
           <h1 className="font-display text-2xl font-bold uppercase tracking-widest text-white">Garage</h1>
         </div>
-        <div className="text-amber-400 font-display font-bold">🪙 {profile.coins}</div>
+        <div className="text-amber-400 font-display font-bold">🪙 {profile.coins} PKR</div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full">
@@ -64,7 +80,7 @@ export default function Garage() {
               {ownsVehicle(v.id) ? (
                 <div className="text-emerald-400 text-[10px] font-bold mt-1">OWNED</div>
               ) : (
-                <div className="text-amber-400 text-[10px] font-bold mt-1">🪙 {v.priceCoins}</div>
+                <div className="text-amber-400 text-[10px] font-bold mt-1">🪙 {v.priceCoins} PKR</div>
               )}
             </button>
           ))}
@@ -73,17 +89,17 @@ export default function Garage() {
         {/* Vehicle preview */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-4">
           <div className="flex items-center justify-center h-40 mb-4">
-            <svg viewBox="0 0 200 90" className="w-64 h-auto drop-shadow-2xl">
-              <ellipse cx="100" cy="80" rx="90" ry="6" fill="#000" opacity="0.35" />
-              <path d="M20,60 Q15,35 45,30 L65,15 Q80,8 120,8 L140,15 Q165,20 180,35 L182,60 Q182,68 172,68 L28,68 Q20,68 20,60 Z"
-                fill={`#${mods.paintColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.25" strokeWidth="1.5" />
-              <path d="M62,30 L78,16 Q90,11 118,11 L134,16 L138,30 Z" fill="#91b6d8" opacity="0.7" />
-              <line x1="100" y1="12" x2="100" y2="30" stroke="#00000030" strokeWidth="1.5" />
-              <circle cx="55" cy="68" r="14" fill={`#${mods.wheelColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.3" strokeWidth="2" />
-              <circle cx="55" cy="68" r="5" fill="#888" />
-              <circle cx="150" cy="68" r="14" fill={`#${mods.wheelColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.3" strokeWidth="2" />
-              <circle cx="150" cy="68" r="5" fill="#888" />
-              <rect x="178" y="42" width="5" height="10" rx="1.5" fill="#ffcc66" />
+            <svg viewBox="0 0 210 90" className="w-64 h-auto drop-shadow-2xl">
+              <ellipse cx="105" cy="80" rx="95" ry="6" fill="#000" opacity="0.35" />
+              <path d={sil.body} fill={`#${mods.paintColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.25" strokeWidth="1.5" />
+              <path d={sil.cabin} fill="#91b6d8" opacity="0.7" />
+              {sil.wheels.map(([wx,wy],i)=>(
+                <g key={i}>
+                  <circle cx={wx} cy={wy} r="14" fill={`#${mods.wheelColor.toString(16).padStart(6,"0")}`} stroke="#000" strokeOpacity="0.3" strokeWidth="2" />
+                  <circle cx={wx} cy={wy} r="5" fill="#888" />
+                </g>
+              ))}
+              <rect x="188" y="42" width="5" height="10" rx="1.5" fill="#ffcc66" />
             </svg>
           </div>
           <h2 className="text-center font-display text-xl font-bold text-white">{viewing.name}</h2>
@@ -103,7 +119,7 @@ export default function Garage() {
               <NeonButton onClick={handleSelect} className="w-full">SELECT VEHICLE</NeonButton>
             )
           ) : (
-            <NeonButton onClick={handleBuy} className="w-full">BUY — 🪙 {viewing.priceCoins}</NeonButton>
+            <NeonButton onClick={handleBuy} className="w-full">BUY — 🪙 {viewing.priceCoins} PKR</NeonButton>
           )}
         </div>
 
@@ -148,7 +164,7 @@ export default function Garage() {
                   </div>
                   <button onClick={() => upgrade(key)} disabled={mods[key] >= 5}
                     className="px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/50 text-primary text-xs font-display font-bold disabled:opacity-30">
-                    {mods[key] >= 5 ? "MAX" : `🪙 ${(mods[key]+1)*1500}`}
+                    {mods[key] >= 5 ? "MAX" : `🪙 ${(mods[key]+1)*1500} PKR`}
                   </button>
                 </div>
               ))}
